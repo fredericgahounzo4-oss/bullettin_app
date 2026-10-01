@@ -7,7 +7,11 @@ import { getClasseOfEleve, isTitulaireDeClasse, matieresVisibles, matieresEnseig
 import { mentionFor } from '../utils/mentions';
 import { fetchClasses, fetchMatieres, fetchEleves, fetchNotes, createNote, updateNote, deleteNote } from '../api/resources';
 import { errorMessage } from '../api/client';
+<<<<<<< HEAD
 import { moyenneEquilibree, isFacultative } from '../utils/moyennes';
+=======
+import { moyenneEquilibree } from '../utils/moyennes';
+>>>>>>> f97770d (Fix: corrige le calcul exact Moy Interro / Moy Devoir dans l'utilitaire de moyenne)
 
 const getColor = (v: number) => v >= 14 ? 'note-high' : v >= 10 ? 'note-mid' : 'note-low';
 const appreciationOf = mentionFor;

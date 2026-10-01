@@ -7,7 +7,11 @@ import { useSettings } from '../context/SettingsContext';
 import { fetchEleves, fetchNotes, fetchClasses, fetchMatieres } from '../api/resources';
 import { errorMessage } from '../api/client';
 import { classesDuProfesseur, elevesDuProfesseur } from '../utils/permissions';
+<<<<<<< HEAD
 import { moyenneEquilibree, moyenneDunGroupeDeleves } from '../utils/moyennes';
+=======
+import { moyenneEquilibree } from '../utils/moyennes';
+>>>>>>> f97770d (Fix: corrige le calcul exact Moy Interro / Moy Devoir dans l'utilitaire de moyenne)
 
 const MOIS_LABELS = ['Jan', 'Fév', 'Mar', 'Avr', 'Mai', 'Juin', 'Juil', 'Août', 'Sep', 'Oct', 'Nov', 'Déc'];
 
@@ -45,12 +49,17 @@ const Dashboard: React.FC<{ onNavigate: (page: string) => void }> = ({ onNavigat
 
   const performanceData = computePerformanceData(notes);
   const totalEleves = eleves.filter(e => e.status === 'actif').length;
+<<<<<<< HEAD
   // Moyenne générale réelle : moyenne des moyennes individuelles de chaque élève
   // (chacune pondérée par coefficient de matière), pas un pool brut de toutes les notes
   // mélangées entre matières de coefficients différents.
   const moyenneGlobale = (() => {
     const elevesActifs = eleves.filter(e => e.status === 'actif');
     const m = moyenneDunGroupeDeleves(elevesActifs, classes, matieres, notes);
+=======
+  const moyenneGlobale = (() => {
+    const m = moyenneEquilibree(notes);
+>>>>>>> f97770d (Fix: corrige le calcul exact Moy Interro / Moy Devoir dans l'utilitaire de moyenne)
     return m !== null ? m.toFixed(1) : '—';
   })();
   const elevesList = eleves.slice(0, 5);
