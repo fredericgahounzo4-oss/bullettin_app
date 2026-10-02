@@ -30,7 +30,7 @@ export const ClassesPage: React.FC = () => {
 
   // Création / modification des infos de base d'une classe
   const [classeModalOpen, setClasseModalOpen] = useState<'new' | Classe | null>(null);
-  const [classeForm, setClasseForm] = useState({ nom: '', niveau: '', anneeScolaire: '' });
+  const [classeForm, setClasseForm] = useState({ nom: '', niveau: '', anneeScolaire: '', couleurAccent: '#2563a8', couleurFond: '#ffffff' });
   const [classeSaving, setClasseSaving] = useState(false);
   const [classeError, setClasseError] = useState<string | null>(null);
 
@@ -77,13 +77,17 @@ export const ClassesPage: React.FC = () => {
 
   const openNewClasse = () => {
     setClasseModalOpen('new');
-    setClasseForm({ nom: '', niveau: '', anneeScolaire: settings.anneeScolaire });
+    setClasseForm({ nom: '', niveau: '', anneeScolaire: settings.anneeScolaire, couleurAccent: settings.couleurBulletin || '#2563a8', couleurFond: settings.couleurFondBulletin || '#ffffff' });
     setClasseError(null);
   };
 
   const openEditClasseInfo = (c: Classe) => {
     setClasseModalOpen(c);
-    setClasseForm({ nom: c.nom, niveau: c.niveau, anneeScolaire: c.anneeScolaire });
+    setClasseForm({
+      nom: c.nom, niveau: c.niveau, anneeScolaire: c.anneeScolaire,
+      couleurAccent: c.couleurBulletin || settings.couleurBulletin || '#2563a8',
+      couleurFond: c.couleurFondBulletin || settings.couleurFondBulletin || '#ffffff',
+    });
     setClasseError(null);
   };
 
@@ -94,10 +98,12 @@ export const ClassesPage: React.FC = () => {
     try {
       if (classeModalOpen === 'new') {
         const created = await createClasse({ nom: classeForm.nom, niveau: classeForm.niveau, anneeScolaire: classeForm.anneeScolaire });
-        setClasses(prev => [...prev, created]);
+        const avecCouleur = await updateClasseCouleur(created.id, { couleurBulletin: classeForm.couleurAccent, couleurFondBulletin: classeForm.couleurFond });
+        setClasses(prev => [...prev, avecCouleur]);
       } else {
-        const updated = await updateClasse(classeModalOpen.id, { nom: classeForm.nom, niveau: classeForm.niveau, anneeScolaire: classeForm.anneeScolaire });
-        setClasses(prev => prev.map(c => c.id === updated.id ? updated : c));
+        await updateClasse(classeModalOpen.id, { nom: classeForm.nom, niveau: classeForm.niveau, anneeScolaire: classeForm.anneeScolaire });
+        const avecCouleur = await updateClasseCouleur(classeModalOpen.id, { couleurBulletin: classeForm.couleurAccent, couleurFondBulletin: classeForm.couleurFond });
+        setClasses(prev => prev.map(c => c.id === avecCouleur.id ? avecCouleur : c));
       }
       setClasseModalOpen(null);
     } catch (err) {
@@ -270,6 +276,19 @@ export const ClassesPage: React.FC = () => {
                   <input className="form-control" value={classeForm.anneeScolaire} onChange={e => setClasseForm(f => ({ ...f, anneeScolaire: e.target.value }))} placeholder="2025-2026" />
                 </div>
               </div>
+              <div className="form-row">
+                <div className="form-group">
+                  <label className="form-label">Couleur d'accent du bulletin</label>
+                  <input type="color" className="form-control" style={{ height: 40, padding: 4 }} value={classeForm.couleurAccent} onChange={e => setClasseForm(f => ({ ...f, couleurAccent: e.target.value }))} />
+                </div>
+                <div className="form-group">
+                  <label className="form-label">Couleur de fond du bulletin</label>
+                  <input type="color" className="form-control" style={{ height: 40, padding: 4 }} value={classeForm.couleurFond} onChange={e => setClasseForm(f => ({ ...f, couleurFond: e.target.value }))} />
+                </div>
+              </div>
+              <p style={{ fontSize: 12, color: 'var(--text-muted)', marginTop: -4 }}>
+                Le titulaire de cette classe peut aussi modifier cette couleur lui-même depuis sa page "Classe titulaire".
+              </p>
             </div>
             <div className="modal-footer">
               <button className="btn btn-ghost" onClick={() => setClasseModalOpen(null)}>Annuler</button>
