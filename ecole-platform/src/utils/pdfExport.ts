@@ -21,11 +21,24 @@ export async function downloadElementAsPdf(element: HTMLElement, filename: strin
 /**
  * Capture plusieurs éléments (un par élève, par ex.) et les regroupe dans un
  * seul PDF, une page par élément, téléchargé directement.
+ *
+ * Ces éléments sont souvent affichés dans une zone à défilement (ex. la fenêtre
+ * "tous les bulletins d'une classe"). Capturer un élément qui n'est pas encore
+ * pleinement visible/stabilisé dans cette zone peut produire une image tronquée
+ * ou mal positionnée, donnant l'impression que les bulletins se chevauchent ou
+ * se "collent" les uns aux autres dans le PDF final. On fait donc défiler chaque
+ * élément en pleine vue et on laisse le navigateur stabiliser l'affichage avant
+ * de le capturer.
  */
 export async function downloadElementsAsPdf(elements: HTMLElement[], filename: string): Promise<void> {
   const pdf = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
   for (let i = 0; i < elements.length; i++) {
-    const canvas = await html2canvas(elements[i], {
+    const el = elements[i];
+    el.scrollIntoView({ block: 'start' });
+    // Deux passages par requestAnimationFrame laissent le temps au navigateur de
+    // terminer le défilement et la mise en page avant la capture.
+    await new Promise<void>(resolve => requestAnimationFrame(() => requestAnimationFrame(() => resolve())));
+    const canvas = await html2canvas(el, {
       scale: 2,
       useCORS: true,
       backgroundColor: '#ffffff',
