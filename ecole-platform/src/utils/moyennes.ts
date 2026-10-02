@@ -1,13 +1,8 @@
-<<<<<<< HEAD
 import { Note, Classe, Matiere } from '../types';
-=======
-import { Note } from '../types';
->>>>>>> f97770d (Fix: corrige le calcul exact Moy Interro / Moy Devoir dans l'utilitaire de moyenne)
 
 const avgOfNotes = (ns: Note[]): number | null =>
   ns.length ? ns.reduce((s, n) => s + n.valeur, 0) / ns.length : null;
 
-<<<<<<< HEAD
 const normalizeNom = (nom: string) => nom.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
 
 const FACULTATIVE_KEYWORDS = [
@@ -29,8 +24,6 @@ export const isFacultative = (nomMatiere: string) => {
   return FACULTATIVE_KEYWORDS.some(k => n.includes(k));
 };
 
-=======
->>>>>>> f97770d (Fix: corrige le calcul exact Moy Interro / Moy Devoir dans l'utilitaire de moyenne)
 /**
  * Calcule la moyenne "officielle" d'un ensemble de notes, exactement comme sur le
  * bulletin imprimé :
@@ -59,7 +52,6 @@ export const moyenneEquilibree = (ns: Note[]): number | null => {
   return partiesFinal.length ? partiesFinal.reduce((s, v) => s + v, 0) / partiesFinal.length : null;
 };
 
-<<<<<<< HEAD
 /**
  * Moyenne générale d'UN élève, pondérée par le coefficient de chaque matière de sa classe
  * — exactement le calcul utilisé sur son bulletin. Les matières facultatives sont exclues
@@ -101,5 +93,3 @@ export const moyenneDunGroupeDeleves = (
 };
 
 
-=======
->>>>>>> f97770d (Fix: corrige le calcul exact Moy Interro / Moy Devoir dans l'utilitaire de moyenne)

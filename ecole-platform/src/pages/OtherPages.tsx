@@ -11,11 +11,7 @@ import {
 } from '../api/resources';
 import { errorMessage } from '../api/client';
 import { mentionFor } from '../utils/mentions';
-<<<<<<< HEAD
 import { moyenneEquilibree, moyenneGeneraleEleve, moyenneDunGroupeDeleves, isFacultative } from '../utils/moyennes';
-=======
-import { moyenneEquilibree } from '../utils/moyennes';
->>>>>>> f97770d (Fix: corrige le calcul exact Moy Interro / Moy Devoir dans l'utilitaire de moyenne)
 
 // ===== CLASSES =====
 export const ClassesPage: React.FC = () => {
@@ -408,19 +404,20 @@ export const StatistiquesPage: React.FC = () => {
   if (loading) return <div className="card" style={{ padding: 40, textAlign: 'center', color: 'var(--text-muted)' }}>Chargement...</div>;
   if (error) return <div className="card" style={{ padding: 40, textAlign: 'center', color: 'var(--danger)' }}>{error}</div>;
 
+  // Trimestre en cours = le plus avancé pour lequel des notes existent déjà. Les moyennes
+  // générales (toutes pondérées par coefficient) doivent toujours porter sur UN SEUL
+  // trimestre à la fois pour correspondre à une vraie moyenne de bulletin — jamais un
+  // mélange de T1+T2+T3 qui ne correspond à aucune moyenne officielle réelle.
+  const trimestreActuel = notes.length ? (Math.max(...notes.map(n => n.trimestre)) as 1 | 2 | 3) : 1;
+  const notesTrimestreActuel = notes.filter(n => n.trimestre === trimestreActuel);
+
   // ----- Statistiques regroupées par niveau (Collège, Lycée, Primaire...) -----
   const niveaux = Array.from(new Set(classes.map(c => c.niveau)));
   const niveauStats = niveaux.map(niveau => {
     const classesDuNiveau = classes.filter(c => c.niveau === niveau);
     const nomsClasses = new Set(classesDuNiveau.map(c => c.nom));
     const elevesDuNiveau = eleves.filter(e => nomsClasses.has(e.classe));
-<<<<<<< HEAD
-    const moyenne = moyenneDunGroupeDeleves(elevesDuNiveau, classes, matieres, notes);
-=======
-    const idsEleves = new Set(elevesDuNiveau.map(e => e.id));
-    const notesDuNiveau = notes.filter(n => idsEleves.has(n.eleveId));
-    const moyenne = moyenneEquilibree(notesDuNiveau);
->>>>>>> f97770d (Fix: corrige le calcul exact Moy Interro / Moy Devoir dans l'utilitaire de moyenne)
+    const moyenne = moyenneDunGroupeDeleves(elevesDuNiveau, classes, matieres, notesTrimestreActuel);
     return { niveau, nbClasses: classesDuNiveau.length, effectif: elevesDuNiveau.length, moyenne };
   });
 
@@ -456,27 +453,10 @@ export const StatistiquesPage: React.FC = () => {
   }).filter(row => niveaux.some(niv => row[niv] !== null && row[niv] !== undefined));
 
   // ----- Taux de réussite (part des élèves notés dont la moyenne générale est ≥ 10/20) -----
-  // Moyenne générale réelle de l'élève : pondérée par le coefficient de chaque matière
-  // (comme sur le bulletin), pas une moyenne brute de toutes ses notes mélangées.
-  const moyenneGeneraleEleveStats = (eleveId: string, classeNom: string) => {
-    const classeObj = classes.find(c => c.nom === classeNom);
-    if (!classeObj) return null;
-    const matieresDeLaClasse = matieres.filter(m => m.classeId === classeObj.id);
-    const parties = matieresDeLaClasse
-      .map(m => ({ avg: moyenneEquilibree(notes.filter(n => n.eleveId === eleveId && n.matiereId === m.id)), coeff: m.coefficient }))
-      .filter((x): x is { avg: number; coeff: number } => x.avg !== null);
-    if (!parties.length) return null;
-    return parties.reduce((s, x) => s + x.avg * x.coeff, 0) / parties.reduce((s, x) => s + x.coeff, 0);
-  };
-
-  const elevesAvecNotes = eleves.filter(e => notes.some(n => n.eleveId === e.id));
+  const elevesAvecNotes = eleves.filter(e => notesTrimestreActuel.some(n => n.eleveId === e.id));
   const tauxReussite = elevesAvecNotes.length
     ? Math.round((elevesAvecNotes.filter(e => {
-<<<<<<< HEAD
-        const moy = moyenneGeneraleEleve(e.id, e.classe, classes, matieres, notes);
-=======
-        const moy = moyenneGeneraleEleveStats(e.id, e.classe);
->>>>>>> f97770d (Fix: corrige le calcul exact Moy Interro / Moy Devoir dans l'utilitaire de moyenne)
+        const moy = moyenneGeneraleEleve(e.id, e.classe, classes, matieres, notesTrimestreActuel);
         return moy !== null && moy >= 10;
       }).length / elevesAvecNotes.length) * 100)
     : null;
@@ -491,11 +471,7 @@ export const StatistiquesPage: React.FC = () => {
         {[
           { label: 'Élèves total', value: eleves.length, icon: <Users size={20} />, color: '#2563a8', bg: 'var(--primary-pale)' },
           { label: 'Taux de réussite', value: tauxReussite !== null ? `${tauxReussite}%` : '—', icon: <CheckCircle size={20} />, color: '#16a34a', bg: 'var(--success-pale)' },
-<<<<<<< HEAD
-          { label: 'Moyenne globale', value: (() => { const m = moyenneDunGroupeDeleves(elevesAvecNotes, classes, matieres, notes); return m !== null ? m.toFixed(1) + '/20' : '—'; })(), icon: <TrendingUp size={20} />, color: '#0891b2', bg: 'var(--info-pale)' },
-=======
-          { label: 'Moyenne globale', value: (() => { const m = moyenneEquilibree(notes); return m !== null ? m.toFixed(1) + '/20' : '—'; })(), icon: <TrendingUp size={20} />, color: '#0891b2', bg: 'var(--info-pale)' },
->>>>>>> f97770d (Fix: corrige le calcul exact Moy Interro / Moy Devoir dans l'utilitaire de moyenne)
+          { label: 'Moyenne globale', value: (() => { const m = moyenneDunGroupeDeleves(elevesAvecNotes, classes, matieres, notesTrimestreActuel); return m !== null ? m.toFixed(1) + '/20' : '—'; })(), icon: <TrendingUp size={20} />, color: '#0891b2', bg: 'var(--info-pale)' },
           { label: 'Notes saisies', value: notes.length, icon: <BookOpen size={20} />, color: '#d97706', bg: 'var(--warning-pale)' },
         ].map(s => (
           <div key={s.label} className="stat-card">
