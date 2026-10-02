@@ -7,13 +7,15 @@ import { useSettings } from '../context/SettingsContext';
 import { fetchEleves, fetchNotes, fetchClasses, fetchMatieres } from '../api/resources';
 import { errorMessage } from '../api/client';
 import { classesDuProfesseur, elevesDuProfesseur } from '../utils/permissions';
+import { moyenneEquilibree, moyenneDunGroupeDeleves } from '../utils/moyennes';
 
 const MOIS_LABELS = ['Jan', 'Fév', 'Mar', 'Avr', 'Mai', 'Juin', 'Juil', 'Août', 'Sep', 'Oct', 'Nov', 'Déc'];
 
 const computePerformanceData = (notes: Note[]) =>
   MOIS_LABELS.map((label, idx) => {
     const ns = notes.filter(n => new Date(n.date).getMonth() === idx);
-    return { mois: label, moyenne: ns.length ? parseFloat((ns.reduce((s, n) => s + n.valeur, 0) / ns.length).toFixed(1)) : null };
+    const moy = moyenneEquilibree(ns);
+    return { mois: label, moyenne: moy !== null ? parseFloat(moy.toFixed(1)) : null };
   }).filter(row => row.moyenne !== null);
 
 const Dashboard: React.FC<{ onNavigate: (page: string) => void }> = ({ onNavigate }) => {
@@ -43,7 +45,14 @@ const Dashboard: React.FC<{ onNavigate: (page: string) => void }> = ({ onNavigat
 
   const performanceData = computePerformanceData(notes);
   const totalEleves = eleves.filter(e => e.status === 'actif').length;
-  const moyenneGlobale = notes.length ? (notes.reduce((s, n) => s + n.valeur, 0) / notes.length).toFixed(1) : '—';
+  // Moyenne générale réelle : moyenne des moyennes individuelles de chaque élève
+  // (chacune pondérée par coefficient de matière), pas un pool brut de toutes les notes
+  // mélangées entre matières de coefficients différents.
+  const moyenneGlobale = (() => {
+    const elevesActifs = eleves.filter(e => e.status === 'actif');
+    const m = moyenneDunGroupeDeleves(elevesActifs, classes, matieres, notes);
+    return m !== null ? m.toFixed(1) : '—';
+  })();
   const elevesList = eleves.slice(0, 5);
 
   // ----- Tableau de bord Professeur -----

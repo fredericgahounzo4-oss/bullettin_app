@@ -7,6 +7,7 @@ import { getClasseOfEleve, isTitulaireDeClasse, matieresVisibles, matieresEnseig
 import { mentionFor } from '../utils/mentions';
 import { fetchClasses, fetchMatieres, fetchEleves, fetchNotes, createNote, updateNote, deleteNote } from '../api/resources';
 import { errorMessage } from '../api/client';
+import { moyenneEquilibree, isFacultative } from '../utils/moyennes';
 
 const getColor = (v: number) => v >= 14 ? 'note-high' : v >= 10 ? 'note-mid' : 'note-low';
 const appreciationOf = mentionFor;
@@ -42,17 +43,16 @@ const NotesParClasse: React.FC<NotesData> = ({ classes, matieres, eleves: allEle
   const classeObj = classes.find(c => c.id === selectedClasse);
   const classeEleves = allEleves.filter(e => e.classe === classeObj?.nom);
   const classeMatieres = matieres.filter(m => m.classeId === selectedClasse);
+  const classeMatieresNotees = classeMatieres.filter(m => !isFacultative(m.nom));
 
   const notesFor = (eleveId: string, matiereId: string) =>
     notes.filter(n => n.eleveId === eleveId && n.matiereId === matiereId && n.trimestre === selectedTrimestre);
 
-  const avgFor = (eleveId: string, matiereId: string) => {
-    const ns = notesFor(eleveId, matiereId);
-    return ns.length ? ns.reduce((s, n) => s + n.valeur, 0) / ns.length : null;
-  };
+  // Même méthode que le bulletin officiel : moyenne de (notes de classe, notes de composition).
+  const avgFor = (eleveId: string, matiereId: string) => moyenneEquilibree(notesFor(eleveId, matiereId));
 
   const moyenneGeneraleEleve = (eleveId: string) => {
-    const parties = classeMatieres.map(m => ({ avg: avgFor(eleveId, m.id), coeff: m.coefficient })).filter(x => x.avg !== null);
+    const parties = classeMatieresNotees.map(m => ({ avg: avgFor(eleveId, m.id), coeff: m.coefficient })).filter(x => x.avg !== null);
     if (!parties.length) return null;
     return parties.reduce((s, x) => s + (x.avg as number) * x.coeff, 0) / parties.reduce((s, x) => s + x.coeff, 0);
   };
@@ -386,14 +386,16 @@ const NotesParEleve: React.FC<NotesData> = ({ classes, matieres, eleves: allElev
 
   const notesByMatiere = matieresAutorisees.map(m => {
     const ns = elevesNotes.filter(n => n.matiereId === m.id);
-    const avg = ns.length ? ns.reduce((s, n) => s + n.valeur, 0) / ns.length : null;
+    const avg = moyenneEquilibree(ns);
     return { matiere: m, notes: ns, avg };
   }).filter(x => x.notes.length > 0);
 
-  const moyenneGenerale = notesByMatiere.length
-    ? (notesByMatiere.reduce((s, x) => s + (x.avg || 0) * x.matiere.coefficient, 0) /
-       notesByMatiere.reduce((s, x) => s + x.matiere.coefficient, 0)).toFixed(2)
-    : '—';
+  const moyenneGenerale = (() => {
+    const partiesNonFacultatives = notesByMatiere.filter(x => !isFacultative(x.matiere.nom));
+    if (!partiesNonFacultatives.length) return '—';
+    return (partiesNonFacultatives.reduce((s, x) => s + (x.avg || 0) * x.matiere.coefficient, 0) /
+       partiesNonFacultatives.reduce((s, x) => s + x.matiere.coefficient, 0)).toFixed(2);
+  })();
 
   const handleSave = async () => {
     if (!form.valeur || !form.matiereId || !form.eleveId) return;

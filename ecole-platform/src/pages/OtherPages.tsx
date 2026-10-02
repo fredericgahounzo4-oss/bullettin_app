@@ -7,10 +7,11 @@ import { useAuth } from '../context/AuthContext';
 import { downloadElementAsPdf, downloadElementsAsPdf } from '../utils/pdfExport';
 import {
   fetchClasses, fetchMatieres, fetchEleves, fetchNotes,
-  fetchUsersByRole, updateClasse, createMatiere, updateMatiere, deleteMatiere,
+  fetchUsersByRole, createClasse, updateClasse, deleteClasse, createMatiere, updateMatiere, deleteMatiere,
 } from '../api/resources';
 import { errorMessage } from '../api/client';
 import { mentionFor } from '../utils/mentions';
+import { moyenneEquilibree, moyenneGeneraleEleve, moyenneDunGroupeDeleves, isFacultative } from '../utils/moyennes';
 
 // ===== CLASSES =====
 export const ClassesPage: React.FC = () => {
@@ -27,12 +28,19 @@ export const ClassesPage: React.FC = () => {
   const [saving, setSaving] = useState(false);
   const [saveError, setSaveError] = useState<string | null>(null);
 
+  // Création / modification des infos de base d'une classe
+  const [classeModalOpen, setClasseModalOpen] = useState<'new' | Classe | null>(null);
+  const [classeForm, setClasseForm] = useState({ nom: '', niveau: '', anneeScolaire: '' });
+  const [classeSaving, setClasseSaving] = useState(false);
+  const [classeError, setClasseError] = useState<string | null>(null);
+
   // Gestion des matières
   const [matieresClasse, setMatieresClasse] = useState<Classe | null>(null);
   const [matForm, setMatForm] = useState({ nom: '', coefficient: '1', professeurId: '', couleur: '#2563a8' });
   const [editMatiere, setEditMatiere] = useState<Matiere | null>(null);
   const [matSaving, setMatSaving] = useState(false);
   const [matError, setMatError] = useState<string | null>(null);
+  const matFormRef = useRef<HTMLDivElement>(null);
 
   const canManage = user?.role === 'admin';
 
@@ -67,6 +75,48 @@ export const ClassesPage: React.FC = () => {
     }
   };
 
+  const openNewClasse = () => {
+    setClasseModalOpen('new');
+    setClasseForm({ nom: '', niveau: '', anneeScolaire: settings.anneeScolaire });
+    setClasseError(null);
+  };
+
+  const openEditClasseInfo = (c: Classe) => {
+    setClasseModalOpen(c);
+    setClasseForm({ nom: c.nom, niveau: c.niveau, anneeScolaire: c.anneeScolaire });
+    setClasseError(null);
+  };
+
+  const handleSaveClasseInfo = async () => {
+    if (!classeModalOpen || !classeForm.nom || !classeForm.niveau || !classeForm.anneeScolaire) return;
+    setClasseSaving(true);
+    setClasseError(null);
+    try {
+      if (classeModalOpen === 'new') {
+        const created = await createClasse({ nom: classeForm.nom, niveau: classeForm.niveau, anneeScolaire: classeForm.anneeScolaire });
+        setClasses(prev => [...prev, created]);
+      } else {
+        const updated = await updateClasse(classeModalOpen.id, { nom: classeForm.nom, niveau: classeForm.niveau, anneeScolaire: classeForm.anneeScolaire });
+        setClasses(prev => prev.map(c => c.id === updated.id ? updated : c));
+      }
+      setClasseModalOpen(null);
+    } catch (err) {
+      setClasseError(errorMessage(err));
+    } finally {
+      setClasseSaving(false);
+    }
+  };
+
+  const handleDeleteClasse = async (c: Classe) => {
+    if (!window.confirm(`Supprimer la classe "${c.nom}" ? Cette action est irréversible.`)) return;
+    try {
+      await deleteClasse(c.id);
+      setClasses(prev => prev.filter(x => x.id !== c.id));
+    } catch (err) {
+      alert(errorMessage(err));
+    }
+  };
+
   const openMatieres = (c: Classe) => {
     setMatieresClasse(c);
     setEditMatiere(null);
@@ -84,6 +134,7 @@ export const ClassesPage: React.FC = () => {
     setEditMatiere(m);
     setMatForm({ nom: m.nom, coefficient: String(m.coefficient), professeurId: m.professeurId || '', couleur: m.couleur || '#2563a8' });
     setMatError(null);
+    matFormRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
   };
 
   const handleSaveMatiere = async () => {
@@ -132,6 +183,11 @@ export const ClassesPage: React.FC = () => {
       <div className="page-header">
         <div className="flex items-center justify-between">
           <div><div className="page-title">Gestion des classes</div><div className="page-subtitle">{classes.length} classes — Année {settings.anneeScolaire}</div></div>
+          {canManage && (
+            <button className="btn btn-primary" onClick={openNewClasse}>
+              <Plus size={14} /> Nouvelle classe
+            </button>
+          )}
         </div>
       </div>
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: 16 }}>
@@ -166,19 +222,64 @@ export const ClassesPage: React.FC = () => {
               </div>
             </div>
             {canManage && (
-              <div style={{ display: 'flex', gap: 8, marginTop: 12 }}>
-                <button className="btn btn-ghost btn-sm" style={{ flex: 1, justifyContent: 'center' }} onClick={() => openMatieres(c)}>
-                  Matières
-                </button>
-                <button className="btn btn-ghost btn-sm" style={{ flex: 1, justifyContent: 'center' }} onClick={() => openEditTitulaire(c)}>
-                  Titulaire
-                </button>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginTop: 12 }}>
+                <div style={{ display: 'flex', gap: 8 }}>
+                  <button className="btn btn-ghost btn-sm" style={{ flex: 1, justifyContent: 'center' }} onClick={() => openMatieres(c)}>
+                    Matières
+                  </button>
+                  <button className="btn btn-ghost btn-sm" style={{ flex: 1, justifyContent: 'center' }} onClick={() => openEditTitulaire(c)}>
+                    Titulaire
+                  </button>
+                </div>
+                <div style={{ display: 'flex', gap: 8 }}>
+                  <button className="btn btn-ghost btn-sm" style={{ flex: 1, justifyContent: 'center' }} onClick={() => openEditClasseInfo(c)}>
+                    <Edit2 size={13} /> Modifier
+                  </button>
+                  <button className="btn btn-ghost btn-sm" style={{ flex: 1, justifyContent: 'center', color: 'var(--danger)' }} onClick={() => handleDeleteClasse(c)}>
+                    <Trash2 size={13} /> Supprimer
+                  </button>
+                </div>
               </div>
             )}
           </div>
           );
         })}
       </div>
+
+      {/* Modal création / modification d'une classe */}
+      {classeModalOpen && (
+        <div className="modal-overlay" onClick={() => setClasseModalOpen(null)}>
+          <div className="modal" onClick={e => e.stopPropagation()}>
+            <div className="modal-header">
+              <div className="modal-title">{classeModalOpen === 'new' ? 'Nouvelle classe' : `Modifier ${classeModalOpen.nom}`}</div>
+              <button className="btn btn-ghost btn-icon btn-sm" onClick={() => setClasseModalOpen(null)}><X size={16} /></button>
+            </div>
+            <div className="modal-body">
+              {classeError && <div style={{ background: 'var(--danger-pale)', color: 'var(--danger)', padding: '8px 12px', borderRadius: 8, fontSize: 13, marginBottom: 12 }}>{classeError}</div>}
+              <div className="form-group">
+                <label className="form-label">Nom de la classe *</label>
+                <input className="form-control" value={classeForm.nom} onChange={e => setClasseForm(f => ({ ...f, nom: e.target.value }))} placeholder="6è A" />
+              </div>
+              <div className="form-row">
+                <div className="form-group">
+                  <label className="form-label">Niveau *</label>
+                  <input className="form-control" value={classeForm.niveau} onChange={e => setClasseForm(f => ({ ...f, niveau: e.target.value }))} placeholder="collège" />
+                </div>
+                <div className="form-group">
+                  <label className="form-label">Année scolaire *</label>
+                  <input className="form-control" value={classeForm.anneeScolaire} onChange={e => setClasseForm(f => ({ ...f, anneeScolaire: e.target.value }))} placeholder="2025-2026" />
+                </div>
+              </div>
+            </div>
+            <div className="modal-footer">
+              <button className="btn btn-ghost" onClick={() => setClasseModalOpen(null)}>Annuler</button>
+              <button className="btn btn-primary" onClick={handleSaveClasseInfo} disabled={classeSaving}>
+                {classeSaving ? 'Enregistrement...' : classeModalOpen === 'new' ? 'Créer la classe' : 'Enregistrer'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Modal titulaire */}
       {editClasse && (
@@ -238,7 +339,7 @@ export const ClassesPage: React.FC = () => {
                 </div>
               )}
 
-              <div style={{ borderTop: '1px solid var(--border)', paddingTop: 14 }}>
+              <div ref={matFormRef} style={{ borderTop: '1px solid var(--border)', paddingTop: 14 }}>
                 <div style={{ fontWeight: 700, fontSize: 13, marginBottom: 10 }}>{editMatiere ? `Modifier "${editMatiere.nom}"` : 'Ajouter une matière'}</div>
                 {matError && <div style={{ background: 'var(--danger-pale)', color: 'var(--danger)', padding: '8px 12px', borderRadius: 8, fontSize: 13, marginBottom: 12 }}>{matError}</div>}
                 <div className="form-row">
@@ -309,9 +410,7 @@ export const StatistiquesPage: React.FC = () => {
     const classesDuNiveau = classes.filter(c => c.niveau === niveau);
     const nomsClasses = new Set(classesDuNiveau.map(c => c.nom));
     const elevesDuNiveau = eleves.filter(e => nomsClasses.has(e.classe));
-    const idsEleves = new Set(elevesDuNiveau.map(e => e.id));
-    const notesDuNiveau = notes.filter(n => idsEleves.has(n.eleveId));
-    const moyenne = notesDuNiveau.length ? notesDuNiveau.reduce((s, n) => s + n.valeur, 0) / notesDuNiveau.length : null;
+    const moyenne = moyenneDunGroupeDeleves(elevesDuNiveau, classes, matieres, notes);
     return { niveau, nbClasses: classesDuNiveau.length, effectif: elevesDuNiveau.length, moyenne };
   });
 
@@ -326,7 +425,8 @@ export const StatistiquesPage: React.FC = () => {
       const classeIdsNiveau = classes.filter(c => c.niveau === niveau).map(c => c.id);
       const matiereIds = matieres.filter(m => m.nom === nom && classeIdsNiveau.includes(m.classeId)).map(m => m.id);
       const ns = notes.filter(n => matiereIds.includes(n.matiereId));
-      row[niveau] = ns.length ? parseFloat((ns.reduce((s, n) => s + n.valeur, 0) / ns.length).toFixed(1)) : null;
+      const moy = moyenneEquilibree(ns);
+      row[niveau] = moy !== null ? parseFloat(moy.toFixed(1)) : null;
     });
     return row;
   }).filter(row => niveaux.some(niv => row[niv] !== null));
@@ -339,7 +439,8 @@ export const StatistiquesPage: React.FC = () => {
       const nomsClassesNiveau = new Set(classes.filter(c => c.niveau === niveau).map(c => c.nom));
       const idsElevesNiveau = new Set(eleves.filter(e => nomsClassesNiveau.has(e.classe)).map(e => e.id));
       const ns = notes.filter(n => idsElevesNiveau.has(n.eleveId) && new Date(n.date).getMonth() === idx);
-      row[niveau] = ns.length ? parseFloat((ns.reduce((s, n) => s + n.valeur, 0) / ns.length).toFixed(1)) : null;
+      const moy = moyenneEquilibree(ns);
+      row[niveau] = moy !== null ? parseFloat(moy.toFixed(1)) : null;
     });
     return row;
   }).filter(row => niveaux.some(niv => row[niv] !== null && row[niv] !== undefined));
@@ -348,8 +449,8 @@ export const StatistiquesPage: React.FC = () => {
   const elevesAvecNotes = eleves.filter(e => notes.some(n => n.eleveId === e.id));
   const tauxReussite = elevesAvecNotes.length
     ? Math.round((elevesAvecNotes.filter(e => {
-        const ns = notes.filter(n => n.eleveId === e.id);
-        return ns.reduce((s, n) => s + n.valeur, 0) / ns.length >= 10;
+        const moy = moyenneGeneraleEleve(e.id, e.classe, classes, matieres, notes);
+        return moy !== null && moy >= 10;
       }).length / elevesAvecNotes.length) * 100)
     : null;
 
@@ -363,7 +464,7 @@ export const StatistiquesPage: React.FC = () => {
         {[
           { label: 'Élèves total', value: eleves.length, icon: <Users size={20} />, color: '#2563a8', bg: 'var(--primary-pale)' },
           { label: 'Taux de réussite', value: tauxReussite !== null ? `${tauxReussite}%` : '—', icon: <CheckCircle size={20} />, color: '#16a34a', bg: 'var(--success-pale)' },
-          { label: 'Moyenne globale', value: notes.length ? (notes.reduce((s, n) => s + n.valeur, 0) / notes.length).toFixed(1) + '/20' : '—', icon: <TrendingUp size={20} />, color: '#0891b2', bg: 'var(--info-pale)' },
+          { label: 'Moyenne globale', value: (() => { const m = moyenneDunGroupeDeleves(elevesAvecNotes, classes, matieres, notes); return m !== null ? m.toFixed(1) + '/20' : '—'; })(), icon: <TrendingUp size={20} />, color: '#0891b2', bg: 'var(--info-pale)' },
           { label: 'Notes saisies', value: notes.length, icon: <BookOpen size={20} />, color: '#d97706', bg: 'var(--warning-pale)' },
         ].map(s => (
           <div key={s.label} className="stat-card">
@@ -489,10 +590,7 @@ const FACULTATIVE_MATCHERS: { label: string; keywords: string[] }[] = [
   { label: 'Conduite', keywords: ['conduite'] },
 ];
 
-const isFacultative = (nomMatiere: string) => {
-  const n = normalizeNom(nomMatiere);
-  return FACULTATIVE_MATCHERS.some(f => f.keywords.some(k => n.includes(k)));
-};
+
 
 export const BulletinPreview: React.FC<{ eleve: Eleve; classes: Classe[]; matieres: Matiere[]; notes: Note[]; eleves: Eleve[]; professeurs: User[]; trimestre: 1 | 2 | 3 }> = ({ eleve, classes, matieres, notes, eleves, professeurs, trimestre }) => {
   const { settings } = useSettings();
@@ -589,7 +687,7 @@ export const BulletinPreview: React.FC<{ eleve: Eleve; classes: Classe[]; matier
       <td style={{ padding: '3px 5px', fontWeight: 600, borderBottom: '1px solid var(--border)' }}>{label}</td>
       <td style={{ padding: '3px 5px', textAlign: 'center', borderBottom: '1px solid var(--border)' }}>{r?.moyInterro !== null && r?.moyInterro !== undefined ? r.moyInterro.toFixed(2) : '—'}</td>
       <td style={{ padding: '3px 5px', textAlign: 'center', borderBottom: '1px solid var(--border)' }}>{r?.moyDevoir !== null && r?.moyDevoir !== undefined ? r.moyDevoir.toFixed(2) : '—'}</td>
-      <td style={{ padding: '3px 5px', textAlign: 'center', color: 'var(--text-muted)', borderBottom: '1px solid var(--border)' }}>{r?.moyClasse !== null && r?.moyClasse !== undefined ? r.moyClasse.toFixed(2) : '—'}</td>
+      <td style={{ padding: '3px 5px', textAlign: 'center', color: 'rgba(15, 23, 42, 0.72)', borderBottom: '1px solid var(--border)' }}>{r?.moyClasse !== null && r?.moyClasse !== undefined ? r.moyClasse.toFixed(2) : '—'}</td>
       <td style={{ padding: '3px 5px', textAlign: 'center', borderBottom: '1px solid var(--border)' }}>{r?.moyComp !== null && r?.moyComp !== undefined ? r.moyComp.toFixed(2) : '—'}</td>
       <td style={{ padding: '3px 5px', textAlign: 'center', fontWeight: 700, borderBottom: '1px solid var(--border)', color: !r || r.moyDes2 === null ? 'var(--text-light)' : r.moyDes2 >= 14 ? 'var(--success)' : r.moyDes2 >= 10 ? 'var(--warning)' : 'var(--danger)' }}>
         {r?.moyDes2 !== null && r?.moyDes2 !== undefined ? r.moyDes2.toFixed(2) : '—'}
@@ -617,7 +715,7 @@ export const BulletinPreview: React.FC<{ eleve: Eleve; classes: Classe[]; matier
         <div style={{ textAlign: 'center' }}>
           <div style={{ fontSize: 9, fontWeight: 700, textTransform: 'uppercase', lineHeight: 1.3 }}>{settings.ministere}</div>
           <div style={{ fontSize: 13, fontWeight: 800, color: accent, marginTop: 1 }}>{settings.nomEcole}</div>
-          <div style={{ fontSize: 9, color: 'var(--text-muted)', marginTop: 1, lineHeight: 1.3 }}>
+          <div style={{ fontSize: 9, color: 'rgba(15, 23, 42, 0.72)', marginTop: 1, lineHeight: 1.3 }}>
             B.P: {settings.bp} {settings.ville}-{settings.pays}<br />
             Tél : {settings.telephone1}{settings.telephone2 ? <><br />{settings.telephone2}</> : ''}
           </div>
@@ -719,18 +817,18 @@ export const BulletinPreview: React.FC<{ eleve: Eleve; classes: Classe[]; matier
               ] : []),
             ].map(([label, val]) => (
               <div key={label} style={{ display: 'flex', justifyContent: 'space-between', borderBottom: '1px dotted var(--border)', paddingBottom: 2, fontSize: 10 }}>
-                <span style={{ color: 'var(--text-muted)' }}>{label}</span><span style={{ fontWeight: 700 }}>{val}</span>
+                <span style={{ color: 'rgba(15, 23, 42, 0.72)' }}>{label}</span><span style={{ fontWeight: 700 }}>{val}</span>
               </div>
             ))}
           </div>
           <div>
             {trimestre === 3 && (
               <>
-                <div style={{ fontSize: 9, color: 'var(--text-muted)', marginBottom: 2 }}>Moyenne annuelle en toutes lettres</div>
+                <div style={{ fontSize: 9, color: 'rgba(15, 23, 42, 0.72)', marginBottom: 2 }}>Moyenne annuelle en toutes lettres</div>
                 <div style={{ border: '1px solid var(--border)', borderRadius: 5, minHeight: 16, marginBottom: 4, padding: 4, fontSize: 9 }} />
               </>
             )}
-            <div style={{ fontSize: 9, color: 'var(--text-muted)', marginBottom: 2 }}>Décision et observation du conseil</div>
+            <div style={{ fontSize: 9, color: 'rgba(15, 23, 42, 0.72)', marginBottom: 2 }}>Décision et observation du conseil</div>
             <div style={{ border: '1px solid var(--border)', borderRadius: 5, minHeight: 16, padding: 4, fontSize: 9 }} />
           </div>
         </div>
@@ -741,14 +839,14 @@ export const BulletinPreview: React.FC<{ eleve: Eleve; classes: Classe[]; matier
         <div style={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
           {['Travail', 'Conduite', "Nbre d'absences"].map(label => (
             <div key={label} style={{ display: 'flex', gap: 6, borderBottom: '1px dotted var(--border)', paddingBottom: 2 }}>
-              <span style={{ color: 'var(--text-muted)' }}>{label}</span>
+              <span style={{ color: 'rgba(15, 23, 42, 0.72)' }}>{label}</span>
             </div>
           ))}
         </div>
         <div>
-          <div style={{ display: 'flex', gap: 6, borderBottom: '1px dotted var(--border)', paddingBottom: 2, marginBottom: 3 }}><span style={{ color: 'var(--text-muted)' }}>Passe en</span></div>
-          <div style={{ display: 'flex', gap: 6, borderBottom: '1px dotted var(--border)', paddingBottom: 2, marginBottom: 3 }}><span style={{ color: 'var(--text-muted)' }}>Double la</span></div>
-          <div style={{ display: 'flex', gap: 6, borderBottom: '1px dotted var(--border)', paddingBottom: 2 }}><span style={{ color: 'var(--text-muted)' }}>Exclu pour</span></div>
+          <div style={{ display: 'flex', gap: 6, borderBottom: '1px dotted var(--border)', paddingBottom: 2, marginBottom: 3 }}><span style={{ color: 'rgba(15, 23, 42, 0.72)' }}>Passe en</span></div>
+          <div style={{ display: 'flex', gap: 6, borderBottom: '1px dotted var(--border)', paddingBottom: 2, marginBottom: 3 }}><span style={{ color: 'rgba(15, 23, 42, 0.72)' }}>Double la</span></div>
+          <div style={{ display: 'flex', gap: 6, borderBottom: '1px dotted var(--border)', paddingBottom: 2 }}><span style={{ color: 'rgba(15, 23, 42, 0.72)' }}>Exclu pour</span></div>
         </div>
       </div>
 
@@ -770,12 +868,12 @@ export const BulletinPreview: React.FC<{ eleve: Eleve; classes: Classe[]; matier
       {/* Signatures */}
       <div style={{ display: 'flex', gap: 20, justifyContent: 'flex-end', paddingTop: 6, borderTop: '1px solid var(--border)' }}>
         <div style={{ textAlign: 'center' }}>
-          <div style={{ fontSize: 10, color: 'var(--text-muted)', marginBottom: 18 }}>Signature du Directeur</div>
-          <div style={{ borderTop: '1px solid var(--text)', paddingTop: 3, fontSize: 9, color: 'var(--text-muted)' }}>Cachet et signature</div>
+          <div style={{ fontSize: 10, color: 'rgba(15, 23, 42, 0.72)', marginBottom: 18 }}>Signature du Directeur</div>
+          <div style={{ borderTop: '1px solid var(--text)', paddingTop: 3, fontSize: 9, color: 'rgba(15, 23, 42, 0.72)' }}>Cachet et signature</div>
         </div>
         <div style={{ textAlign: 'center' }}>
-          <div style={{ fontSize: 10, color: 'var(--text-muted)', marginBottom: 18 }}>Signature du Parent</div>
-          <div style={{ borderTop: '1px solid var(--text)', paddingTop: 3, fontSize: 9, color: 'var(--text-muted)' }}>Signature</div>
+          <div style={{ fontSize: 10, color: 'rgba(15, 23, 42, 0.72)', marginBottom: 18 }}>Signature du Parent</div>
+          <div style={{ borderTop: '1px solid var(--text)', paddingTop: 3, fontSize: 9, color: 'rgba(15, 23, 42, 0.72)' }}>Signature</div>
         </div>
       </div>
     </div>
@@ -814,15 +912,14 @@ export const BulletinsPage: React.FC = () => {
   const classeEleves = eleves.filter(e => e.classe === classeObj?.nom);
 
   const moyenneEleve = (eleveId: string) => {
-    const classeMatieres = matieres.filter(m => m.classeId === selectedClasse);
+    const classeMatieres = matieres.filter(m => m.classeId === selectedClasse && !isFacultative(m.nom));
     const eleveNotes = notes.filter(n => n.eleveId === eleveId && n.trimestre === selectedTrimestre);
     const parties = classeMatieres.map(m => {
-      const ns = eleveNotes.filter(n => n.matiereId === m.id);
-      const avg = ns.length ? ns.reduce((s, n) => s + n.valeur, 0) / ns.length : null;
+      const avg = moyenneEquilibree(eleveNotes.filter(n => n.matiereId === m.id));
       return { avg, coeff: m.coefficient };
-    }).filter(x => x.avg !== null);
+    }).filter((x): x is { avg: number; coeff: number } => x.avg !== null);
     if (!parties.length) return null;
-    return parties.reduce((s, x) => s + (x.avg as number) * x.coeff, 0) / parties.reduce((s, x) => s + x.coeff, 0);
+    return parties.reduce((s, x) => s + x.avg * x.coeff, 0) / parties.reduce((s, x) => s + x.coeff, 0);
   };
 
   const bulletinFilename = (e: Eleve) => `bulletin-${e.nom}-${e.prenom}-T${selectedTrimestre}.pdf`.replace(/\s+/g, '_');
@@ -1289,12 +1386,13 @@ export const TitulairePage: React.FC = () => {
 
   const classeObj = classes.find(c => c.id === selectedClasse) || mesClasses[0];
   const classeEleves = eleves.filter(e => e.classe === classeObj.nom);
-  const classeMatieres = matieres.filter(m => m.classeId === classeObj.id);
+  const classeMatieres = matieres.filter(m => m.classeId === classeObj.id && !isFacultative(m.nom));
 
-  const avgFor = (eleveId: string, matiereId: string) => {
-    const ns = notes.filter(n => n.eleveId === eleveId && n.matiereId === matiereId && n.trimestre === selectedTrimestre);
-    return ns.length ? ns.reduce((s, n) => s + n.valeur, 0) / ns.length : null;
-  };
+  // Même méthode de calcul que le bulletin officiel : pour chaque matière,
+  // Moy Classe = moyenne (interros + devoirs), Moy Comp = moyenne des compositions,
+  // puis la moyenne finale de la matière = moyenne de (Moy Classe, Moy Comp).
+  const avgFor = (eleveId: string, matiereId: string) =>
+    moyenneEquilibree(notes.filter(n => n.eleveId === eleveId && n.matiereId === matiereId && n.trimestre === selectedTrimestre));
   const moyenneGeneraleEleve = (eleveId: string) => {
     const parties = classeMatieres.map(m => ({ avg: avgFor(eleveId, m.id), coeff: m.coefficient })).filter(x => x.avg !== null);
     if (!parties.length) return null;

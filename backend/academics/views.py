@@ -1,5 +1,6 @@
 from django.db.models import Q
 from rest_framework import viewsets, permissions
+from rest_framework.exceptions import ValidationError
 
 from .models import Classe, Matiere, Eleve, Note
 from .serializers import ClasseSerializer, MatiereSerializer, EleveSerializer, NoteSerializer
@@ -26,6 +27,14 @@ class ClasseViewSet(viewsets.ModelViewSet):
         if user.role == 'professeur':
             return classes_du_professeur(user.id)
         return Classe.objects.none()
+
+    def perform_destroy(self, instance):
+        if instance.eleves.exists():
+            raise ValidationError(
+                "Impossible de supprimer cette classe : elle contient encore des élèves. "
+                "Déplacez ou supprimez d'abord ses élèves."
+            )
+        instance.delete()
 
 
 class MatiereViewSet(viewsets.ModelViewSet):

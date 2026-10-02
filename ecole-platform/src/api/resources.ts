@@ -17,6 +17,10 @@ export async function apiMe(): Promise<User> {
 
 // ------------------------------------------------------------ Classes
 export const fetchClasses = async (): Promise<Classe[]> => (await http.getAll<any>('/classes/')).map(mapClasse);
+export const createClasse = async (payload: { nom: string; niveau: string; anneeScolaire: string }): Promise<Classe> =>
+  mapClasse(await http.post<any>('/classes/', {
+    nom: payload.nom, niveau: payload.niveau, annee_scolaire: payload.anneeScolaire,
+  }));
 export const updateClasse = async (id: string, payload: { professeurPrincipalId?: string | null; nom?: string; niveau?: string; effectif?: number; anneeScolaire?: string }): Promise<Classe> => {
   const body: Record<string, unknown> = {};
   if (payload.professeurPrincipalId !== undefined) body.professeur_principal = payload.professeurPrincipalId ? Number(payload.professeurPrincipalId) : null;
@@ -26,6 +30,7 @@ export const updateClasse = async (id: string, payload: { professeurPrincipalId?
   if (payload.anneeScolaire !== undefined) body.annee_scolaire = payload.anneeScolaire;
   return mapClasse(await http.patch<any>(`/classes/${id}/`, body));
 };
+export const deleteClasse = async (id: string): Promise<void> => http.delete(`/classes/${id}/`);
 
 // ----------------------------------------------------------- Matieres
 export const fetchMatieres = async (): Promise<Matiere[]> => (await http.getAll<any>('/matieres/')).map(mapMatiere);
