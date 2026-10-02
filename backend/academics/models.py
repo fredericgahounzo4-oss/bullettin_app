@@ -14,6 +14,14 @@ class Classe(models.Model):
         help_text="Le titulaire de la classe : voit le bulletin complet, même s'il n'enseigne pas toutes les matières.",
     )
     annee_scolaire = models.CharField(max_length=20, default='2024-2025')
+    couleur_bulletin = models.CharField(
+        max_length=7, blank=True, default='',
+        help_text="Couleur d'accent du bulletin de cette classe (ex. #2563a8). Vide = couleur par défaut de l'établissement.",
+    )
+    couleur_fond_bulletin = models.CharField(
+        max_length=7, blank=True, default='',
+        help_text="Couleur de fond du bulletin de cette classe (ex. #ffffff). Vide = couleur par défaut de l'établissement.",
+    )
 
     class Meta:
         ordering = ['nom']

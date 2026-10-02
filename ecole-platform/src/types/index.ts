@@ -29,6 +29,10 @@ export interface Classe {
   effectif: number;
   professeurPrincipalId: string;
   anneeScolaire: string;
+  /** Couleur d'accent du bulletin, propre à cette classe. Vide = couleur par défaut de l'établissement. */
+  couleurBulletin?: string;
+  /** Couleur de fond du bulletin, propre à cette classe. Vide = couleur par défaut de l'établissement. */
+  couleurFondBulletin?: string;
 }
 
 export interface Matiere {

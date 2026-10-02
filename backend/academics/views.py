@@ -1,6 +1,8 @@
 from django.db.models import Q
 from rest_framework import viewsets, permissions
+from rest_framework.decorators import action
 from rest_framework.exceptions import ValidationError
+from rest_framework.response import Response
 
 from .models import Classe, Matiere, Eleve, Note
 from .serializers import ClasseSerializer, MatiereSerializer, EleveSerializer, NoteSerializer
@@ -35,6 +37,33 @@ class ClasseViewSet(viewsets.ModelViewSet):
                 "Déplacez ou supprimez d'abord ses élèves."
             )
         instance.delete()
+
+    @action(detail=True, methods=['patch'], url_path='couleur', permission_classes=[permissions.IsAuthenticated])
+    def couleur(self, request, pk=None):
+        """
+        Permet au TITULAIRE d'une classe (ou à un admin) de personnaliser la couleur
+        du bulletin de SA classe uniquement — contrairement au reste de la fiche classe
+        (nom, niveau, effectif...), réservé à l'admin via le endpoint standard.
+        """
+        try:
+            classe = Classe.objects.get(pk=pk)
+        except Classe.DoesNotExist:
+            return Response({'detail': 'Classe introuvable.'}, status=404)
+
+        user = request.user
+        est_titulaire = user.role == 'professeur' and classe.professeur_principal_id == user.id
+        if user.role != 'admin' and not est_titulaire:
+            return Response(
+                {'detail': "Seul le titulaire de cette classe (ou un administrateur) peut modifier sa couleur."},
+                status=403,
+            )
+
+        if 'couleur_bulletin' in request.data:
+            classe.couleur_bulletin = request.data.get('couleur_bulletin') or ''
+        if 'couleur_fond_bulletin' in request.data:
+            classe.couleur_fond_bulletin = request.data.get('couleur_fond_bulletin') or ''
+        classe.save(update_fields=['couleur_bulletin', 'couleur_fond_bulletin'])
+        return Response(ClasseSerializer(classe).data)
 
 
 class MatiereViewSet(viewsets.ModelViewSet):

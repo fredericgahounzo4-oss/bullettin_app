@@ -7,7 +7,7 @@ import { useAuth } from '../context/AuthContext';
 import { downloadElementAsPdf, downloadElementsAsPdf } from '../utils/pdfExport';
 import {
   fetchClasses, fetchMatieres, fetchEleves, fetchNotes,
-  fetchUsersByRole, createClasse, updateClasse, deleteClasse, createMatiere, updateMatiere, deleteMatiere,
+  fetchUsersByRole, createClasse, updateClasse, deleteClasse, updateClasseCouleur, createMatiere, updateMatiere, deleteMatiere,
 } from '../api/resources';
 import { errorMessage } from '../api/client';
 import { mentionFor } from '../utils/mentions';
@@ -686,7 +686,10 @@ export const BulletinPreview: React.FC<{ eleve: Eleve; classes: Classe[]; matier
 
   const mention = mentionFor(moyenneGenerale);
 
-  const accent = settings.couleurBulletin || '#2563a8';
+  // La classe peut personnaliser la couleur de son propre bulletin (réglée par son titulaire) ;
+  // à défaut, on retombe sur la couleur par défaut de l'établissement.
+  const accent = classeObj?.couleurBulletin || settings.couleurBulletin || '#2563a8';
+  const couleurFond = classeObj?.couleurFondBulletin || settings.couleurFondBulletin;
   const accentPale = hexToRgba(accent, 0.12);
 
   const renderRow = (label: string, r: ReturnType<typeof computeRow> | null, key: string) => (
@@ -709,7 +712,7 @@ export const BulletinPreview: React.FC<{ eleve: Eleve; classes: Classe[]; matier
   );
 
   return (
-    <div className="card bulletin-print" style={{ padding: '14px 18px', maxWidth: 920, margin: '0 auto', fontSize: 10, background: settings.couleurFondBulletin }}>
+    <div className="card bulletin-print" style={{ padding: '14px 18px', maxWidth: 920, margin: '0 auto', fontSize: 10, background: couleurFond }}>
       {/* En-tête officiel */}
       <div style={{ display: 'grid', gridTemplateColumns: '60px 1fr 190px', gap: 8, alignItems: 'center', borderBottom: '2px solid var(--text)', paddingBottom: 6, marginBottom: 6 }}>
         {settings.logoUrl ? (
@@ -1347,6 +1350,7 @@ const getColorTitulaire = (v: number) => v >= 14 ? 'note-high' : v >= 10 ? 'note
 
 export const TitulairePage: React.FC = () => {
   const { user } = useAuth();
+  const { settings } = useSettings();
   const [classes, setClasses] = useState<Classe[]>([]);
   const [matieres, setMatieres] = useState<Matiere[]>([]);
   const [eleves, setEleves] = useState<Eleve[]>([]);
@@ -1359,6 +1363,10 @@ export const TitulairePage: React.FC = () => {
   const [viewEleve, setViewEleve] = useState<string | null>(null);
   const [exporting, setExporting] = useState(false);
   const bulletinRef = useRef<HTMLDivElement>(null);
+  const [couleurModalOpen, setCouleurModalOpen] = useState(false);
+  const [couleurForm, setCouleurForm] = useState({ accent: '#2563a8', fond: '#ffffff' });
+  const [couleurSaving, setCouleurSaving] = useState(false);
+  const [couleurError, setCouleurError] = useState<string | null>(null);
 
   useEffect(() => {
     let cancelled = false;
@@ -1421,11 +1429,77 @@ export const TitulairePage: React.FC = () => {
     }
   };
 
+  const openCouleurModal = () => {
+    setCouleurForm({
+      accent: classeObj.couleurBulletin || settings.couleurBulletin || '#2563a8',
+      fond: classeObj.couleurFondBulletin || settings.couleurFondBulletin || '#ffffff',
+    });
+    setCouleurError(null);
+    setCouleurModalOpen(true);
+  };
+
+  const handleSaveCouleur = async () => {
+    setCouleurSaving(true);
+    setCouleurError(null);
+    try {
+      const updated = await updateClasseCouleur(classeObj.id, { couleurBulletin: couleurForm.accent, couleurFondBulletin: couleurForm.fond });
+      setClasses(prev => prev.map(c => c.id === updated.id ? updated : c));
+      setCouleurModalOpen(false);
+    } catch (err) {
+      setCouleurError(errorMessage(err));
+    } finally {
+      setCouleurSaving(false);
+    }
+  };
+
   return (
     <div>
       <div className="page-header">
         <div><div className="page-title">Classe titulaire — {classeObj.nom}</div><div className="page-subtitle">Vue complète : toutes les matières, tous les élèves</div></div>
+        <button className="btn btn-ghost" onClick={openCouleurModal}>
+          <Palette size={14} /> Couleur du bulletin
+        </button>
       </div>
+
+      {couleurModalOpen && (
+        <div className="modal-overlay" onClick={() => setCouleurModalOpen(false)}>
+          <div className="modal" onClick={e => e.stopPropagation()}>
+            <div className="modal-header">
+              <div className="modal-title">Couleur du bulletin — {classeObj.nom}</div>
+              <button className="btn btn-ghost btn-icon btn-sm" onClick={() => setCouleurModalOpen(false)}><X size={16} /></button>
+            </div>
+            <div className="modal-body">
+              <p style={{ fontSize: 13, color: 'var(--text-muted)', marginTop: 0 }}>
+                Personnalisez les couleurs du bulletin de votre classe uniquement. Les autres classes
+                de l'établissement gardent la couleur par défaut, sauf si leur propre titulaire la change aussi.
+              </p>
+              {couleurError && <div style={{ background: 'var(--danger-pale)', color: 'var(--danger)', padding: '8px 12px', borderRadius: 8, fontSize: 13, marginBottom: 12 }}>{couleurError}</div>}
+              <div className="form-row">
+                <div className="form-group">
+                  <label className="form-label">Couleur d'accent</label>
+                  <input type="color" className="form-control" style={{ height: 40, padding: 4 }} value={couleurForm.accent} onChange={e => setCouleurForm(f => ({ ...f, accent: e.target.value }))} />
+                </div>
+                <div className="form-group">
+                  <label className="form-label">Couleur de fond</label>
+                  <input type="color" className="form-control" style={{ height: 40, padding: 4 }} value={couleurForm.fond} onChange={e => setCouleurForm(f => ({ ...f, fond: e.target.value }))} />
+                </div>
+              </div>
+              <div style={{ marginTop: 16, borderRadius: 8, overflow: 'hidden', border: '1px solid var(--border)' }}>
+                <div style={{ background: couleurForm.fond, padding: 16 }}>
+                  <div style={{ color: couleurForm.accent, fontWeight: 800, fontSize: 14 }}>Aperçu — {classeObj.nom}</div>
+                  <div style={{ color: 'rgba(15, 23, 42, 0.72)', fontSize: 12, marginTop: 4 }}>Moyenne du trimestre : 14.50/20</div>
+                </div>
+              </div>
+            </div>
+            <div className="modal-footer">
+              <button className="btn btn-ghost" onClick={() => setCouleurModalOpen(false)}>Annuler</button>
+              <button className="btn btn-primary" onClick={handleSaveCouleur} disabled={couleurSaving}>
+                {couleurSaving ? 'Enregistrement...' : 'Enregistrer'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       <div className="card" style={{ marginBottom: 20, padding: '16px 20px' }}>
         <div style={{ display: 'flex', gap: 16, flexWrap: 'wrap', alignItems: 'flex-end' }}>

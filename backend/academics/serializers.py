@@ -9,7 +9,7 @@ class ClasseSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Classe
-        fields = ['id', 'nom', 'niveau', 'effectif', 'professeur_principal', 'professeur_principal_detail', 'annee_scolaire']
+        fields = ['id', 'nom', 'niveau', 'effectif', 'professeur_principal', 'professeur_principal_detail', 'annee_scolaire', 'couleur_bulletin', 'couleur_fond_bulletin']
 
 
 class MatiereSerializer(serializers.ModelSerializer):

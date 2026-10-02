@@ -32,6 +32,21 @@ export const updateClasse = async (id: string, payload: { professeurPrincipalId?
 };
 export const deleteClasse = async (id: string): Promise<void> => http.delete(`/classes/${id}/`);
 
+/**
+ * Personnalise la couleur du bulletin d'UNE classe. Accessible au titulaire de cette
+ * classe (en plus de l'admin) via un endpoint dédié et restreint côté serveur — contrairement
+ * aux autres informations de la classe (nom, niveau...), réservées à l'admin.
+ */
+export const updateClasseCouleur = async (
+  id: string,
+  payload: { couleurBulletin?: string; couleurFondBulletin?: string }
+): Promise<Classe> => {
+  const body: Record<string, unknown> = {};
+  if (payload.couleurBulletin !== undefined) body.couleur_bulletin = payload.couleurBulletin;
+  if (payload.couleurFondBulletin !== undefined) body.couleur_fond_bulletin = payload.couleurFondBulletin;
+  return mapClasse(await http.patch<any>(`/classes/${id}/couleur/`, body));
+};
+
 // ----------------------------------------------------------- Matieres
 export const fetchMatieres = async (): Promise<Matiere[]> => (await http.getAll<any>('/matieres/')).map(mapMatiere);
 export const createMatiere = async (payload: Partial<Matiere>): Promise<Matiere> =>

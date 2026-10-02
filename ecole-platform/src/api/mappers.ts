@@ -16,6 +16,8 @@ export function mapClasse(c: any): Classe {
   return {
     id: s(c.id), nom: c.nom, niveau: c.niveau, effectif: c.effectif,
     professeurPrincipalId: s(c.professeur_principal), anneeScolaire: c.annee_scolaire,
+    couleurBulletin: c.couleur_bulletin || undefined,
+    couleurFondBulletin: c.couleur_fond_bulletin || undefined,
   };
 }
 
