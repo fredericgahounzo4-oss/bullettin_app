@@ -57,7 +57,7 @@ const Dashboard: React.FC<{ onNavigate: (page: string) => void }> = ({ onNavigat
   const moyenneGlobale = (() => {
     const elevesActifs = eleves.filter(e => e.status === 'actif');
     const m = moyenneDunGroupeDeleves(elevesActifs, classes, matieres, notesTrimestreActuel);
-    return m !== null ? m.toFixed(1) : '—';
+    return m !== null ? m.toFixed(2) : '—';
   })();
   const elevesList = eleves.slice(0, 5);
 

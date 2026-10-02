@@ -471,7 +471,7 @@ export const StatistiquesPage: React.FC = () => {
         {[
           { label: 'Élèves total', value: eleves.length, icon: <Users size={20} />, color: '#2563a8', bg: 'var(--primary-pale)' },
           { label: 'Taux de réussite', value: tauxReussite !== null ? `${tauxReussite}%` : '—', icon: <CheckCircle size={20} />, color: '#16a34a', bg: 'var(--success-pale)' },
-          { label: 'Moyenne globale', value: (() => { const m = moyenneDunGroupeDeleves(elevesAvecNotes, classes, matieres, notesTrimestreActuel); return m !== null ? m.toFixed(1) + '/20' : '—'; })(), icon: <TrendingUp size={20} />, color: '#0891b2', bg: 'var(--info-pale)' },
+          { label: 'Moyenne globale', value: (() => { const m = moyenneDunGroupeDeleves(elevesAvecNotes, classes, matieres, notesTrimestreActuel); return m !== null ? m.toFixed(2) + '/20' : '—'; })(), icon: <TrendingUp size={20} />, color: '#0891b2', bg: 'var(--info-pale)' },
           { label: 'Notes saisies', value: notes.length, icon: <BookOpen size={20} />, color: '#d97706', bg: 'var(--warning-pale)' },
         ].map(s => (
           <div key={s.label} className="stat-card">
@@ -503,7 +503,7 @@ export const StatistiquesPage: React.FC = () => {
                   <td>
                     {n.moyenne !== null ? (
                       <span className={`badge badge-${n.moyenne >= 14 ? 'success' : n.moyenne >= 10 ? 'warning' : 'danger'}`}>
-                        {n.moyenne.toFixed(1)}/20
+                        {n.moyenne.toFixed(2)}/20
                       </span>
                     ) : (
                       <span style={{ color: 'var(--text-light)' }}>—</span>
