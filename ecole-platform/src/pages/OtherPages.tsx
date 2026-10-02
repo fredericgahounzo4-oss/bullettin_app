@@ -30,7 +30,7 @@ export const ClassesPage: React.FC = () => {
 
   // Création / modification des infos de base d'une classe
   const [classeModalOpen, setClasseModalOpen] = useState<'new' | Classe | null>(null);
-  const [classeForm, setClasseForm] = useState({ nom: '', niveau: '', anneeScolaire: '', couleurAccent: '#2563a8', couleurFond: '#ffffff' });
+  const [classeForm, setClasseForm] = useState({ nom: '', niveau: '', anneeScolaire: '' });
   const [classeSaving, setClasseSaving] = useState(false);
   const [classeError, setClasseError] = useState<string | null>(null);
 
@@ -77,17 +77,13 @@ export const ClassesPage: React.FC = () => {
 
   const openNewClasse = () => {
     setClasseModalOpen('new');
-    setClasseForm({ nom: '', niveau: '', anneeScolaire: settings.anneeScolaire, couleurAccent: settings.couleurBulletin || '#2563a8', couleurFond: settings.couleurFondBulletin || '#ffffff' });
+    setClasseForm({ nom: '', niveau: '', anneeScolaire: settings.anneeScolaire });
     setClasseError(null);
   };
 
   const openEditClasseInfo = (c: Classe) => {
     setClasseModalOpen(c);
-    setClasseForm({
-      nom: c.nom, niveau: c.niveau, anneeScolaire: c.anneeScolaire,
-      couleurAccent: c.couleurBulletin || settings.couleurBulletin || '#2563a8',
-      couleurFond: c.couleurFondBulletin || settings.couleurFondBulletin || '#ffffff',
-    });
+    setClasseForm({ nom: c.nom, niveau: c.niveau, anneeScolaire: c.anneeScolaire });
     setClasseError(null);
   };
 
@@ -98,12 +94,10 @@ export const ClassesPage: React.FC = () => {
     try {
       if (classeModalOpen === 'new') {
         const created = await createClasse({ nom: classeForm.nom, niveau: classeForm.niveau, anneeScolaire: classeForm.anneeScolaire });
-        const avecCouleur = await updateClasseCouleur(created.id, { couleurBulletin: classeForm.couleurAccent, couleurFondBulletin: classeForm.couleurFond });
-        setClasses(prev => [...prev, avecCouleur]);
+        setClasses(prev => [...prev, created]);
       } else {
-        await updateClasse(classeModalOpen.id, { nom: classeForm.nom, niveau: classeForm.niveau, anneeScolaire: classeForm.anneeScolaire });
-        const avecCouleur = await updateClasseCouleur(classeModalOpen.id, { couleurBulletin: classeForm.couleurAccent, couleurFondBulletin: classeForm.couleurFond });
-        setClasses(prev => prev.map(c => c.id === avecCouleur.id ? avecCouleur : c));
+        const updated = await updateClasse(classeModalOpen.id, { nom: classeForm.nom, niveau: classeForm.niveau, anneeScolaire: classeForm.anneeScolaire });
+        setClasses(prev => prev.map(c => c.id === updated.id ? updated : c));
       }
       setClasseModalOpen(null);
     } catch (err) {
@@ -276,18 +270,8 @@ export const ClassesPage: React.FC = () => {
                   <input className="form-control" value={classeForm.anneeScolaire} onChange={e => setClasseForm(f => ({ ...f, anneeScolaire: e.target.value }))} placeholder="2025-2026" />
                 </div>
               </div>
-              <div className="form-row">
-                <div className="form-group">
-                  <label className="form-label">Couleur d'accent du bulletin</label>
-                  <input type="color" className="form-control" style={{ height: 40, padding: 4 }} value={classeForm.couleurAccent} onChange={e => setClasseForm(f => ({ ...f, couleurAccent: e.target.value }))} />
-                </div>
-                <div className="form-group">
-                  <label className="form-label">Couleur de fond du bulletin</label>
-                  <input type="color" className="form-control" style={{ height: 40, padding: 4 }} value={classeForm.couleurFond} onChange={e => setClasseForm(f => ({ ...f, couleurFond: e.target.value }))} />
-                </div>
-              </div>
-              <p style={{ fontSize: 12, color: 'var(--text-muted)', marginTop: -4 }}>
-                Le titulaire de cette classe peut aussi modifier cette couleur lui-même depuis sa page "Classe titulaire".
+              <p style={{ fontSize: 12, color: 'var(--text-muted)', marginTop: 4 }}>
+                La couleur du bulletin de cette classe se change dans Paramètres → Couleur des bulletins par classe.
               </p>
             </div>
             <div className="modal-footer">
@@ -1126,6 +1110,49 @@ export const SettingsPage: React.FC = () => {
   const [pwdMsg, setPwdMsg] = useState<{ ok: boolean; text: string } | null>(null);
   const [logoError, setLogoError] = useState<string | null>(null);
 
+  // Couleur du bulletin, personnalisable par classe
+  const [classes, setClasses] = useState<Classe[]>([]);
+  const [selectedClasseId, setSelectedClasseId] = useState('');
+  const [classeCouleur, setClasseCouleur] = useState({ accent: '', fond: '' });
+  const [classeCouleurSaving, setClasseCouleurSaving] = useState(false);
+  const [classeCouleurSaved, setClasseCouleurSaved] = useState(false);
+  const [classeCouleurError, setClasseCouleurError] = useState<string | null>(null);
+
+  useEffect(() => {
+    fetchClasses().then(cs => {
+      setClasses(cs);
+      setSelectedClasseId(prev => prev || cs[0]?.id || '');
+    }).catch(() => {});
+  }, []);
+
+  useEffect(() => {
+    const c = classes.find(cl => cl.id === selectedClasseId);
+    if (c) {
+      setClasseCouleur({
+        accent: c.couleurBulletin || settings.couleurBulletin || '#2563a8',
+        fond: c.couleurFondBulletin || settings.couleurFondBulletin || '#ffffff',
+      });
+      setClasseCouleurError(null);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [selectedClasseId, classes.length]);
+
+  const handleSaveClasseCouleur = async () => {
+    if (!selectedClasseId) return;
+    setClasseCouleurSaving(true);
+    setClasseCouleurError(null);
+    try {
+      const updated = await updateClasseCouleur(selectedClasseId, { couleurBulletin: classeCouleur.accent, couleurFondBulletin: classeCouleur.fond });
+      setClasses(prev => prev.map(c => c.id === updated.id ? updated : c));
+      setClasseCouleurSaved(true);
+      setTimeout(() => setClasseCouleurSaved(false), 2500);
+    } catch (err) {
+      setClasseCouleurError(errorMessage(err));
+    } finally {
+      setClasseCouleurSaving(false);
+    }
+  };
+
   const handleLogoUpload = (file: File | undefined) => {
     if (!file) return;
     setLogoError(null);
@@ -1342,20 +1369,68 @@ export const SettingsPage: React.FC = () => {
           )}
 
           {tab === 'apparence' && (
-            <div className="card">
-              <div className="card-header"><span style={{ fontWeight: 700, display: 'flex', alignItems: 'center', gap: 6 }}><Palette size={15} /> {t('settings.theme')}</span></div>
-              <div className="card-body">
-                <div style={{ display: 'flex', gap: 12 }}>
-                  {(['clair', 'sombre'] as const).map(th => (
-                    <button key={th} onClick={() => updateSettings({ theme: th })}
-                      className={`btn ${settings.theme === th ? 'btn-primary' : 'btn-ghost'}`}
-                      style={{ flex: 1, justifyContent: 'center', padding: '14px', border: settings.theme === th ? 'none' : '1px solid var(--border)' }}>
-                      {th === 'clair' ? t('settings.themeClair') : t('settings.themeSombre')}
-                    </button>
-                  ))}
+            <>
+              <div className="card">
+                <div className="card-header"><span style={{ fontWeight: 700, display: 'flex', alignItems: 'center', gap: 6 }}><Palette size={15} /> {t('settings.theme')}</span></div>
+                <div className="card-body">
+                  <div style={{ display: 'flex', gap: 12 }}>
+                    {(['clair', 'sombre'] as const).map(th => (
+                      <button key={th} onClick={() => updateSettings({ theme: th })}
+                        className={`btn ${settings.theme === th ? 'btn-primary' : 'btn-ghost'}`}
+                        style={{ flex: 1, justifyContent: 'center', padding: '14px', border: settings.theme === th ? 'none' : '1px solid var(--border)' }}>
+                        {th === 'clair' ? t('settings.themeClair') : t('settings.themeSombre')}
+                      </button>
+                    ))}
+                  </div>
                 </div>
               </div>
-            </div>
+
+              <div className="card">
+                <div className="card-header"><span style={{ fontWeight: 700, display: 'flex', alignItems: 'center', gap: 6 }}><Palette size={15} /> Couleur des bulletins par classe</span></div>
+                <div className="card-body">
+                  <p style={{ fontSize: 13, color: 'var(--text-muted)', marginTop: 0 }}>
+                    Choisissez une classe pour personnaliser la couleur de son bulletin. Chaque classe garde sa
+                    propre couleur ; une classe non personnalisée utilise la couleur par défaut de l'établissement
+                    (onglet Général). Le titulaire de la classe peut aussi la modifier lui-même depuis sa page.
+                  </p>
+                  {classeCouleurError && <div style={{ background: 'var(--danger-pale)', color: 'var(--danger)', padding: '8px 12px', borderRadius: 8, fontSize: 13, marginBottom: 12 }}>{classeCouleurError}</div>}
+                  <div className="form-group">
+                    <label className="form-label">Classe</label>
+                    <select className="form-control" value={selectedClasseId} onChange={e => setSelectedClasseId(e.target.value)}>
+                      {classes.map(c => <option key={c.id} value={c.id}>{c.nom}{c.couleurBulletin ? ' (personnalisée)' : ''}</option>)}
+                    </select>
+                  </div>
+                  <div className="form-row">
+                    <div className="form-group">
+                      <label className="form-label">Couleur d'accent</label>
+                      <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+                        <input type="color" value={classeCouleur.accent} onChange={e => setClasseCouleur(f => ({ ...f, accent: e.target.value }))} style={{ width: 44, height: 38, padding: 2, border: '1px solid var(--border)', borderRadius: 6, cursor: 'pointer' }} />
+                        <input className="form-control" value={classeCouleur.accent} onChange={e => setClasseCouleur(f => ({ ...f, accent: e.target.value }))} placeholder="#2563a8" />
+                      </div>
+                    </div>
+                    <div className="form-group">
+                      <label className="form-label">Couleur de fond</label>
+                      <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+                        <input type="color" value={classeCouleur.fond} onChange={e => setClasseCouleur(f => ({ ...f, fond: e.target.value }))} style={{ width: 44, height: 38, padding: 2, border: '1px solid var(--border)', borderRadius: 6, cursor: 'pointer' }} />
+                        <input className="form-control" value={classeCouleur.fond} onChange={e => setClasseCouleur(f => ({ ...f, fond: e.target.value }))} placeholder="#ffffff" />
+                      </div>
+                    </div>
+                  </div>
+                  <div style={{ borderRadius: 8, overflow: 'hidden', border: '1px solid var(--border)', marginBottom: 16 }}>
+                    <div style={{ background: classeCouleur.fond, padding: 16 }}>
+                      <div style={{ color: classeCouleur.accent, fontWeight: 800, fontSize: 14 }}>
+                        Aperçu — {classes.find(c => c.id === selectedClasseId)?.nom || ''}
+                      </div>
+                      <div style={{ color: 'rgba(15, 23, 42, 0.72)', fontSize: 12, marginTop: 4 }}>Moyenne du trimestre : 14.50/20</div>
+                    </div>
+                  </div>
+                  <button className="btn btn-primary" onClick={handleSaveClasseCouleur} disabled={classeCouleurSaving || !selectedClasseId}>
+                    <Save size={14} /> {classeCouleurSaving ? 'Enregistrement...' : 'Enregistrer pour cette classe'}
+                  </button>
+                  {classeCouleurSaved && <span style={{ marginLeft: 12, color: 'var(--success)', fontSize: 13, fontWeight: 600 }}>✓ Enregistré</span>}
+                </div>
+              </div>
+            </>
           )}
 
         </div>
