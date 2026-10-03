@@ -37,6 +37,7 @@ const menuByRole: Record<Role, { sectionKey: string; items: { id: string; labelK
       { id: 'dashboard', labelKey: 'nav.dashboard', icon: <LayoutDashboard size={16} /> },
       { id: 'notes', labelKey: 'nav.saisieNotes', icon: <BookOpen size={16} /> },
       { id: 'titulaire', labelKey: 'nav.titulaire', icon: <FileText size={16} /> },
+      { id: 'settings', labelKey: 'nav.settings', icon: <Settings size={16} /> },
     ]},
   ],
 };

@@ -1103,8 +1103,12 @@ export const BulletinsPage: React.FC = () => {
 
 // ===== SETTINGS =====
 export const SettingsPage: React.FC = () => {
+  const { user } = useAuth();
+  const isAdmin = user?.role === 'admin';
   const { settings, updateSettings, t } = useSettings();
-  const [tab, setTab] = useState<'general' | 'notifications' | 'securite' | 'apparence'>('general');
+  // Un professeur n'a accès qu'à l'apparence et la sécurité de SON compte — les infos de
+  // l'établissement et les notifications globales restent réservées à l'admin.
+  const [tab, setTab] = useState<'general' | 'notifications' | 'securite' | 'apparence'>(isAdmin ? 'general' : 'apparence');
   const [draft, setDraft] = useState(settings);
   const [saved, setSaved] = useState(false);
   const [pwd, setPwd] = useState({ actuel: '', nouveau: '', confirmer: '' });
@@ -1167,12 +1171,17 @@ export const SettingsPage: React.FC = () => {
     reader.readAsDataURL(file);
   };
 
-  const tabs: { id: typeof tab; labelKey: string }[] = [
-    { id: 'general', labelKey: 'settings.tab.general' },
-    { id: 'notifications', labelKey: 'settings.tab.notifications' },
-    { id: 'securite', labelKey: 'settings.tab.securite' },
-    { id: 'apparence', labelKey: 'settings.tab.apparence' },
-  ];
+  const tabs: { id: typeof tab; labelKey: string }[] = isAdmin
+    ? [
+        { id: 'general', labelKey: 'settings.tab.general' },
+        { id: 'notifications', labelKey: 'settings.tab.notifications' },
+        { id: 'securite', labelKey: 'settings.tab.securite' },
+        { id: 'apparence', labelKey: 'settings.tab.apparence' },
+      ]
+    : [
+        { id: 'securite', labelKey: 'settings.tab.securite' },
+        { id: 'apparence', labelKey: 'settings.tab.apparence' },
+      ];
 
   const handleSaveGeneral = () => {
     updateSettings(draft);
@@ -1386,7 +1395,7 @@ export const SettingsPage: React.FC = () => {
                 </div>
               </div>
 
-              <div className="card">
+              {isAdmin && <div className="card">
                 <div className="card-header"><span style={{ fontWeight: 700, display: 'flex', alignItems: 'center', gap: 6 }}><Palette size={15} /> Couleur des bulletins par classe</span></div>
                 <div className="card-body">
                   <p style={{ fontSize: 13, color: 'var(--text-muted)', marginTop: 0 }}>
@@ -1430,7 +1439,7 @@ export const SettingsPage: React.FC = () => {
                   </button>
                   {classeCouleurSaved && <span style={{ marginLeft: 12, color: 'var(--success)', fontSize: 13, fontWeight: 600 }}>✓ Enregistré</span>}
                 </div>
-              </div>
+              </div>}
             </>
           )}
 
