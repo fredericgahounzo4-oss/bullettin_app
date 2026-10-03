@@ -1,5 +1,6 @@
 import jsPDF from 'jspdf';
 import html2canvas from 'html2canvas';
+import JSZip from 'jszip';
 
 /**
  * Capture un élément du DOM et le télécharge directement en PDF A4, une
@@ -47,6 +48,44 @@ export async function downloadElementsAsPdf(elements: HTMLElement[], filename: s
     addCanvasAsPage(pdf, canvas);
   }
   pdf.save(filename);
+}
+
+/**
+ * Capture plusieurs éléments (un par élève, par ex.) et génère UN PDF distinct
+ * par élément, regroupés dans un unique fichier ZIP téléchargé directement —
+ * contrairement à downloadElementsAsPdf qui les empile dans un seul PDF à
+ * plusieurs pages. Chaque élève obtient ainsi son propre fichier PDF, nommé
+ * individuellement, prêt à être partagé ou imprimé séparément.
+ */
+export async function downloadElementsAsSeparatePdfsZip(
+  items: { element: HTMLElement; filename: string }[],
+  zipFilename: string
+): Promise<void> {
+  const zip = new JSZip();
+  for (const { element, filename } of items) {
+    element.scrollIntoView({ block: 'start' });
+    // Même précaution que pour le PDF groupé : laisser le temps au navigateur de
+    // terminer le défilement et la mise en page avant de capturer l'élément.
+    await new Promise<void>(resolve => requestAnimationFrame(() => requestAnimationFrame(() => resolve())));
+    const canvas = await html2canvas(element, {
+      scale: 2,
+      useCORS: true,
+      backgroundColor: '#ffffff',
+    });
+    const pdf = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
+    addCanvasAsPage(pdf, canvas);
+    const blob = pdf.output('blob');
+    zip.file(filename, blob);
+  }
+  const zipBlob = await zip.generateAsync({ type: 'blob' });
+  const url = URL.createObjectURL(zipBlob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = zipFilename;
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  URL.revokeObjectURL(url);
 }
 
 function addCanvasAsPage(pdf: jsPDF, canvas: HTMLCanvasElement) {

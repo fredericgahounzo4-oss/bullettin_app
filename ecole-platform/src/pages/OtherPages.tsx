@@ -4,7 +4,7 @@ import { Check, X, Download, Users, TrendingUp, BookOpen, CheckCircle, Lock, Pal
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, LineChart, Line, Legend, RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis, Radar } from 'recharts';
 import { useSettings } from '../context/SettingsContext';
 import { useAuth } from '../context/AuthContext';
-import { downloadElementAsPdf, downloadElementsAsPdf } from '../utils/pdfExport';
+import { downloadElementAsPdf, downloadElementsAsSeparatePdfsZip } from '../utils/pdfExport';
 import {
   fetchClasses, fetchMatieres, fetchEleves, fetchNotes,
   fetchUsersByRole, createClasse, updateClasse, deleteClasse, updateClasseCouleur, createMatiere, updateMatiere, deleteMatiere,
@@ -964,11 +964,15 @@ export const BulletinsPage: React.FC = () => {
 
   const handleDownloadAllPdf = async () => {
     if (exporting) return;
-    const elements = classeEleves.map(e => allBulletinRefs.current[e.id]).filter((el): el is HTMLDivElement => !!el);
-    if (!elements.length) return;
+    const items = classeEleves
+      .map(e => ({ element: allBulletinRefs.current[e.id], filename: bulletinFilename(e) }))
+      .filter((x): x is { element: HTMLDivElement; filename: string } => !!x.element);
+    if (!items.length) return;
     setExporting(true);
     try {
-      await downloadElementsAsPdf(elements, `bulletins-${classeObj?.nom || 'classe'}-T${selectedTrimestre}.pdf`.replace(/\s+/g, '_'));
+      // Un PDF séparé par élève, regroupés dans un seul ZIP téléchargé — plus pratique
+      // pour partager ou imprimer le bulletin d'un élève en particulier.
+      await downloadElementsAsSeparatePdfsZip(items, `bulletins-${classeObj?.nom || 'classe'}-T${selectedTrimestre}.zip`.replace(/\s+/g, '_'));
     } finally {
       setExporting(false);
     }
@@ -1083,7 +1087,7 @@ export const BulletinsPage: React.FC = () => {
             <div className="modal-header no-print">
               <div className="modal-title">Tous les bulletins — {classeObj?.nom} ({classeEleves.length})</div>
               <div style={{ display: 'flex', gap: 8 }}>
-                <button className="btn btn-accent btn-sm" onClick={handleDownloadAllPdf} disabled={exporting}><Download size={13} /> {exporting ? 'Génération...' : 'Télécharger PDF (tout)'}</button>
+                <button className="btn btn-accent btn-sm" onClick={handleDownloadAllPdf} disabled={exporting}><Download size={13} /> {exporting ? 'Génération...' : 'Télécharger (ZIP, un PDF par élève)'}</button>
                 <button className="btn btn-ghost btn-icon btn-sm" onClick={() => setViewAllClasse(false)}><X size={16} /></button>
               </div>
             </div>
