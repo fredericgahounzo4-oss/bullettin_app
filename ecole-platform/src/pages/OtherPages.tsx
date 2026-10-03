@@ -1469,8 +1469,10 @@ export const TitulairePage: React.FC = () => {
   const [selectedClasse, setSelectedClasse] = useState('');
   const [selectedTrimestre, setSelectedTrimestre] = useState<1 | 2 | 3>(1);
   const [viewEleve, setViewEleve] = useState<string | null>(null);
+  const [viewAllClasse, setViewAllClasse] = useState(false);
   const [exporting, setExporting] = useState(false);
   const bulletinRef = useRef<HTMLDivElement>(null);
+  const allBulletinRefs = useRef<Record<string, HTMLDivElement | null>>({});
   const [couleurModalOpen, setCouleurModalOpen] = useState(false);
   const [couleurForm, setCouleurForm] = useState({ accent: '#2563a8', fond: '#ffffff' });
   const [couleurSaving, setCouleurSaving] = useState(false);
@@ -1527,11 +1529,28 @@ export const TitulairePage: React.FC = () => {
 
   const viewEleveObj = viewEleve ? eleves.find(e => e.id === viewEleve) : undefined;
 
+  const bulletinFilename = (e: Eleve) => `bulletin-${e.nom}-${e.prenom}-T${selectedTrimestre}.pdf`.replace(/\s+/g, '_');
+
   const handleDownloadPdf = async () => {
     if (!bulletinRef.current || !viewEleveObj || exporting) return;
     setExporting(true);
     try {
-      await downloadElementAsPdf(bulletinRef.current, `bulletin-${viewEleveObj.nom}-${viewEleveObj.prenom}-T${selectedTrimestre}.pdf`.replace(/\s+/g, '_'));
+      await downloadElementAsPdf(bulletinRef.current, bulletinFilename(viewEleveObj));
+    } finally {
+      setExporting(false);
+    }
+  };
+
+  const handleDownloadAllPdf = async () => {
+    if (exporting) return;
+    const items = classeEleves
+      .map(e => ({ element: allBulletinRefs.current[e.id], filename: bulletinFilename(e) }))
+      .filter((x): x is { element: HTMLDivElement; filename: string } => !!x.element);
+    if (!items.length) return;
+    setExporting(true);
+    try {
+      // Un PDF séparé par élève, regroupés dans un seul ZIP téléchargé.
+      await downloadElementsAsSeparatePdfsZip(items, `bulletins-${classeObj?.nom || 'classe'}-T${selectedTrimestre}.zip`.replace(/\s+/g, '_'));
     } finally {
       setExporting(false);
     }
@@ -1564,10 +1583,36 @@ export const TitulairePage: React.FC = () => {
     <div>
       <div className="page-header">
         <div><div className="page-title">Classe titulaire — {classeObj.nom}</div><div className="page-subtitle">Vue complète : toutes les matières, tous les élèves</div></div>
-        <button className="btn btn-ghost" onClick={openCouleurModal}>
-          <Palette size={14} /> Couleur du bulletin
-        </button>
+        <div style={{ display: 'flex', gap: 8 }}>
+          <button className="btn btn-ghost" onClick={() => setViewAllClasse(true)}>
+            <Download size={14} /> Télécharger tous les bulletins
+          </button>
+          <button className="btn btn-ghost" onClick={openCouleurModal}>
+            <Palette size={14} /> Couleur du bulletin
+          </button>
+        </div>
       </div>
+
+      {viewAllClasse && (
+        <div className="modal-overlay bulletin-modal-overlay" onClick={() => setViewAllClasse(false)}>
+          <div className="modal bulletin-modal" onClick={e => e.stopPropagation()} style={{ maxWidth: 760 }}>
+            <div className="modal-header no-print">
+              <div className="modal-title">Tous les bulletins — {classeObj.nom} ({classeEleves.length})</div>
+              <div style={{ display: 'flex', gap: 8 }}>
+                <button className="btn btn-accent btn-sm" onClick={handleDownloadAllPdf} disabled={exporting}><Download size={13} /> {exporting ? 'Génération...' : 'Télécharger (ZIP, un PDF par élève)'}</button>
+                <button className="btn btn-ghost btn-icon btn-sm" onClick={() => setViewAllClasse(false)}><X size={16} /></button>
+              </div>
+            </div>
+            <div className="modal-body" style={{ background: 'var(--surface2)', display: 'flex', flexDirection: 'column', gap: 20 }}>
+              {classeEleves.map(e => (
+                <div key={e.id} className="bulletin-page-break" ref={el => { allBulletinRefs.current[e.id] = el; }}>
+                  <BulletinPreview eleve={e} classes={classes} matieres={matieres} notes={notes} eleves={eleves} professeurs={professeurs} trimestre={selectedTrimestre} />
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
 
       {couleurModalOpen && (
         <div className="modal-overlay" onClick={() => setCouleurModalOpen(false)}>
