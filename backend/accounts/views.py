@@ -3,13 +3,21 @@ import string
 from rest_framework import generics, permissions, viewsets, status
 from rest_framework.decorators import action
 from rest_framework.response import Response
+from rest_framework.throttling import AnonRateThrottle
 from rest_framework_simplejwt.views import TokenObtainPairView
 from .models import User
 from .serializers import UserSerializer, UserCreateSerializer, EmailTokenObtainPairSerializer
 
 
+class LoginRateThrottle(AnonRateThrottle):
+    """Limite les tentatives de connexion par IP (scope 'login', voir settings.py)
+    pour empêcher le brute-force de mots de passe."""
+    scope = 'login'
+
+
 class LoginView(TokenObtainPairView):
     serializer_class = EmailTokenObtainPairSerializer
+    throttle_classes = [LoginRateThrottle]
 
 
 class MeView(generics.RetrieveAPIView):
