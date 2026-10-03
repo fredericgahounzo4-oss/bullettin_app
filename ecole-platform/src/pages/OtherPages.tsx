@@ -697,27 +697,27 @@ export const BulletinPreview: React.FC<{ eleve: Eleve; classes: Classe[]; matier
 
   const renderRow = (label: string, r: ReturnType<typeof computeRow> | null, key: string) => (
     <tr key={key} style={{ background: 'white' }}>
-      <td style={{ padding: '3px 5px', fontWeight: 600, borderBottom: '1px solid var(--border)' }}>{label}</td>
-      <td style={{ padding: '3px 5px', textAlign: 'center', borderBottom: '1px solid var(--border)' }}>{r?.moyInterro !== null && r?.moyInterro !== undefined ? r.moyInterro.toFixed(2) : '—'}</td>
-      <td style={{ padding: '3px 5px', textAlign: 'center', borderBottom: '1px solid var(--border)' }}>{r?.moyDevoir !== null && r?.moyDevoir !== undefined ? r.moyDevoir.toFixed(2) : '—'}</td>
-      <td style={{ padding: '3px 5px', textAlign: 'center', color: 'rgba(15, 23, 42, 0.72)', borderBottom: '1px solid var(--border)' }}>{r?.moyClasse !== null && r?.moyClasse !== undefined ? r.moyClasse.toFixed(2) : '—'}</td>
-      <td style={{ padding: '3px 5px', textAlign: 'center', borderBottom: '1px solid var(--border)' }}>{r?.moyComp !== null && r?.moyComp !== undefined ? r.moyComp.toFixed(2) : '—'}</td>
-      <td style={{ padding: '3px 5px', textAlign: 'center', fontWeight: 700, borderBottom: '1px solid var(--border)', color: !r || r.moyDes2 === null ? 'var(--text-light)' : r.moyDes2 >= 14 ? 'var(--success)' : r.moyDes2 >= 10 ? 'var(--warning)' : 'var(--danger)' }}>
+      <td style={{ padding: '3px 5px', fontWeight: 600, borderBottom: '1px solid #e2e8f0' }}>{label}</td>
+      <td style={{ padding: '3px 5px', textAlign: 'center', borderBottom: '1px solid #e2e8f0' }}>{r?.moyInterro !== null && r?.moyInterro !== undefined ? r.moyInterro.toFixed(2) : '—'}</td>
+      <td style={{ padding: '3px 5px', textAlign: 'center', borderBottom: '1px solid #e2e8f0' }}>{r?.moyDevoir !== null && r?.moyDevoir !== undefined ? r.moyDevoir.toFixed(2) : '—'}</td>
+      <td style={{ padding: '3px 5px', textAlign: 'center', color: 'rgba(15, 23, 42, 0.72)', borderBottom: '1px solid #e2e8f0' }}>{r?.moyClasse !== null && r?.moyClasse !== undefined ? r.moyClasse.toFixed(2) : '—'}</td>
+      <td style={{ padding: '3px 5px', textAlign: 'center', borderBottom: '1px solid #e2e8f0' }}>{r?.moyComp !== null && r?.moyComp !== undefined ? r.moyComp.toFixed(2) : '—'}</td>
+      <td style={{ padding: '3px 5px', textAlign: 'center', fontWeight: 700, borderBottom: '1px solid #e2e8f0', color: !r || r.moyDes2 === null ? 'rgba(15, 23, 42, 0.45)' : r.moyDes2 >= 14 ? 'var(--success)' : r.moyDes2 >= 10 ? 'var(--warning)' : 'var(--danger)' }}>
         {r?.moyDes2 !== null && r?.moyDes2 !== undefined ? r.moyDes2.toFixed(2) : '—'}
       </td>
-      <td style={{ padding: '3px 5px', textAlign: 'center', borderBottom: '1px solid var(--border)' }}>{r ? r.matiere.coefficient : '—'}</td>
-      <td style={{ padding: '3px 5px', textAlign: 'center', borderBottom: '1px solid var(--border)' }}>{r?.moyDes2 !== null && r?.moyDes2 !== undefined ? (r.moyDes2 * r.matiere.coefficient).toFixed(2) : '—'}</td>
-      <td style={{ padding: '3px 5px', textAlign: 'center', borderBottom: '1px solid var(--border)' }}>{r?.rang ? `${r.rang}/${r.totalClasse}` : '—'}</td>
-      <td style={{ padding: '3px 5px', borderBottom: '1px solid var(--border)', fontSize: 9 }}>{r?.prof ? `${r.prof.prenom} ${r.prof.nom}` : '—'}</td>
-      <td style={{ padding: '3px 5px', borderBottom: '1px solid var(--border)', fontSize: 9 }}>{r ? appreciationFor(r.moyDes2) : '—'}</td>
-      <td style={{ padding: '3px 5px', borderBottom: '1px solid var(--border)' }} />
+      <td style={{ padding: '3px 5px', textAlign: 'center', borderBottom: '1px solid #e2e8f0' }}>{r ? r.matiere.coefficient : '—'}</td>
+      <td style={{ padding: '3px 5px', textAlign: 'center', borderBottom: '1px solid #e2e8f0' }}>{r?.moyDes2 !== null && r?.moyDes2 !== undefined ? (r.moyDes2 * r.matiere.coefficient).toFixed(2) : '—'}</td>
+      <td style={{ padding: '3px 5px', textAlign: 'center', borderBottom: '1px solid #e2e8f0' }}>{r?.rang ? `${r.rang}/${r.totalClasse}` : '—'}</td>
+      <td style={{ padding: '3px 5px', borderBottom: '1px solid #e2e8f0', fontSize: 9 }}>{r?.prof ? `${r.prof.prenom} ${r.prof.nom}` : '—'}</td>
+      <td style={{ padding: '3px 5px', borderBottom: '1px solid #e2e8f0', fontSize: 9 }}>{r ? appreciationFor(r.moyDes2) : '—'}</td>
+      <td style={{ padding: '3px 5px', borderBottom: '1px solid #e2e8f0' }} />
     </tr>
   );
 
   return (
     <div className="card bulletin-print" style={{ padding: '14px 18px', maxWidth: 920, margin: '0 auto', fontSize: 10, background: couleurFond }}>
       {/* En-tête officiel */}
-      <div style={{ display: 'grid', gridTemplateColumns: '60px 1fr 190px', gap: 8, alignItems: 'center', borderBottom: '2px solid var(--text)', paddingBottom: 6, marginBottom: 6 }}>
+      <div style={{ display: 'grid', gridTemplateColumns: '60px 1fr 190px', gap: 8, alignItems: 'center', borderBottom: '2px solid #0f172a', paddingBottom: 6, marginBottom: 6 }}>
         {settings.logoUrl ? (
           <img src={settings.logoUrl} alt="Logo" style={{ width: 52, height: 52, borderRadius: '50%', objectFit: 'cover', border: `2px solid ${accent}` }} />
         ) : (
@@ -745,8 +745,8 @@ export const BulletinPreview: React.FC<{ eleve: Eleve; classes: Classe[]; matier
           <div style={{ fontSize: 10, marginTop: 1 }}>DU {trimestre}{trimestre === 1 ? 'er' : 'ème'} Trimestre</div>
         </div>
         <div style={{ display: 'flex', gap: 12, fontSize: 9 }}>
-          <span style={{ display: 'flex', alignItems: 'center', gap: 3 }}><span style={{ width: 10, height: 10, border: '1px solid var(--text)', display: 'inline-block' }} /> Doublant</span>
-          <span style={{ display: 'flex', alignItems: 'center', gap: 3 }}><span style={{ width: 10, height: 10, border: '1px solid var(--text)', display: 'inline-block' }} /> Nouveau</span>
+          <span style={{ display: 'flex', alignItems: 'center', gap: 3 }}><span style={{ width: 10, height: 10, border: '1px solid #0f172a', display: 'inline-block' }} /> Doublant</span>
+          <span style={{ display: 'flex', alignItems: 'center', gap: 3 }}><span style={{ width: 10, height: 10, border: '1px solid #0f172a', display: 'inline-block' }} /> Nouveau</span>
         </div>
       </div>
 
@@ -755,7 +755,7 @@ export const BulletinPreview: React.FC<{ eleve: Eleve; classes: Classe[]; matier
         <div>Classe <b>{eleve.classe}</b></div>
         <div>Effectif <b>{classeEleves.length}</b></div>
       </div>
-      <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 10, marginBottom: 6, borderBottom: '1px solid var(--border)', paddingBottom: 5, flexWrap: 'wrap', gap: 6 }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 10, marginBottom: 6, borderBottom: '1px solid #e2e8f0', paddingBottom: 5, flexWrap: 'wrap', gap: 6 }}>
         <div>Nom et prénoms de l'élève <b>{eleve.nom} {eleve.prenom}</b></div>
         <div>N° MLE <b>—</b></div>
       </div>
@@ -806,16 +806,16 @@ export const BulletinPreview: React.FC<{ eleve: Eleve; classes: Classe[]; matier
       <div style={{ display: 'grid', gridTemplateColumns: '160px 1fr', gap: 8, marginBottom: 6 }}>
         <div>
           <div style={{ fontSize: 9, fontWeight: 700, marginBottom: 2 }}>MAJORATION</div>
-          <div style={{ border: '1px solid var(--border)', borderRadius: 5, minHeight: 20 }} />
+          <div style={{ border: '1px solid #e2e8f0', borderRadius: 5, minHeight: 20 }} />
         </div>
         <div>
           <div style={{ fontSize: 9, fontWeight: 700, marginBottom: 2 }}>OBSERVATION DU TITULAIRE</div>
-          <div style={{ border: '1px solid var(--border)', borderRadius: 5, minHeight: 20 }} />
+          <div style={{ border: '1px solid #e2e8f0', borderRadius: 5, minHeight: 20 }} />
         </div>
       </div>
 
       {/* Total des points */}
-      <div style={{ border: '1px solid var(--border)', borderRadius: 6, padding: 8, marginBottom: 6 }}>
+      <div style={{ border: '1px solid #e2e8f0', borderRadius: 6, padding: 8, marginBottom: 6 }}>
         <div style={{ fontWeight: 700, fontSize: 10, marginBottom: 4 }}>TOTAL DES POINTS</div>
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
@@ -829,7 +829,7 @@ export const BulletinPreview: React.FC<{ eleve: Eleve; classes: Classe[]; matier
                 ['Classement annuel', classementAnnuel],
               ] : []),
             ].map(([label, val]) => (
-              <div key={label} style={{ display: 'flex', justifyContent: 'space-between', borderBottom: '1px dotted var(--border)', paddingBottom: 2, fontSize: 10 }}>
+              <div key={label} style={{ display: 'flex', justifyContent: 'space-between', borderBottom: '1px dotted #e2e8f0', paddingBottom: 2, fontSize: 10 }}>
                 <span style={{ color: 'rgba(15, 23, 42, 0.72)' }}>{label}</span><span style={{ fontWeight: 700 }}>{val}</span>
               </div>
             ))}
@@ -838,11 +838,11 @@ export const BulletinPreview: React.FC<{ eleve: Eleve; classes: Classe[]; matier
             {trimestre === 3 && (
               <>
                 <div style={{ fontSize: 9, color: 'rgba(15, 23, 42, 0.72)', marginBottom: 2 }}>Moyenne annuelle en toutes lettres</div>
-                <div style={{ border: '1px solid var(--border)', borderRadius: 5, minHeight: 16, marginBottom: 4, padding: 4, fontSize: 9 }} />
+                <div style={{ border: '1px solid #e2e8f0', borderRadius: 5, minHeight: 16, marginBottom: 4, padding: 4, fontSize: 9 }} />
               </>
             )}
             <div style={{ fontSize: 9, color: 'rgba(15, 23, 42, 0.72)', marginBottom: 2 }}>Décision et observation du conseil</div>
-            <div style={{ border: '1px solid var(--border)', borderRadius: 5, minHeight: 16, padding: 4, fontSize: 9 }} />
+            <div style={{ border: '1px solid #e2e8f0', borderRadius: 5, minHeight: 16, padding: 4, fontSize: 9 }} />
           </div>
         </div>
       </div>
@@ -851,20 +851,20 @@ export const BulletinPreview: React.FC<{ eleve: Eleve; classes: Classe[]; matier
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10, marginBottom: 6, fontSize: 10 }}>
         <div style={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
           {['Travail', 'Conduite', "Nbre d'absences"].map(label => (
-            <div key={label} style={{ display: 'flex', gap: 6, borderBottom: '1px dotted var(--border)', paddingBottom: 2 }}>
+            <div key={label} style={{ display: 'flex', gap: 6, borderBottom: '1px dotted #e2e8f0', paddingBottom: 2 }}>
               <span style={{ color: 'rgba(15, 23, 42, 0.72)' }}>{label}</span>
             </div>
           ))}
         </div>
         <div>
-          <div style={{ display: 'flex', gap: 6, borderBottom: '1px dotted var(--border)', paddingBottom: 2, marginBottom: 3 }}><span style={{ color: 'rgba(15, 23, 42, 0.72)' }}>Passe en</span></div>
-          <div style={{ display: 'flex', gap: 6, borderBottom: '1px dotted var(--border)', paddingBottom: 2, marginBottom: 3 }}><span style={{ color: 'rgba(15, 23, 42, 0.72)' }}>Double la</span></div>
-          <div style={{ display: 'flex', gap: 6, borderBottom: '1px dotted var(--border)', paddingBottom: 2 }}><span style={{ color: 'rgba(15, 23, 42, 0.72)' }}>Exclu pour</span></div>
+          <div style={{ display: 'flex', gap: 6, borderBottom: '1px dotted #e2e8f0', paddingBottom: 2, marginBottom: 3 }}><span style={{ color: 'rgba(15, 23, 42, 0.72)' }}>Passe en</span></div>
+          <div style={{ display: 'flex', gap: 6, borderBottom: '1px dotted #e2e8f0', paddingBottom: 2, marginBottom: 3 }}><span style={{ color: 'rgba(15, 23, 42, 0.72)' }}>Double la</span></div>
+          <div style={{ display: 'flex', gap: 6, borderBottom: '1px dotted #e2e8f0', paddingBottom: 2 }}><span style={{ color: 'rgba(15, 23, 42, 0.72)' }}>Exclu pour</span></div>
         </div>
       </div>
 
       {/* Résultat */}
-      <div style={{ border: '1px solid var(--border)', borderRadius: 6, padding: 8, marginBottom: 8 }}>
+      <div style={{ border: '1px solid #e2e8f0', borderRadius: 6, padding: 8, marginBottom: 8 }}>
         <div style={{ fontWeight: 700, fontSize: 10, marginBottom: 4, textAlign: 'center' }}>RÉSULTAT</div>
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 3, fontSize: 9 }}>
           {[
@@ -872,21 +872,21 @@ export const BulletinPreview: React.FC<{ eleve: Eleve; classes: Classe[]; matier
             'A fait des efforts', "Peu d'amélioration pour le travail", 'Elève faible', 'Ne fait aucun effort', 'Discipline insuffisante',
           ].map(m => (
             <div key={m} style={{ display: 'flex', alignItems: 'center', gap: 3 }}>
-              <span style={{ width: 8, height: 8, border: '1px solid var(--text)', display: 'inline-block', flexShrink: 0 }} /> {m}
+              <span style={{ width: 8, height: 8, border: '1px solid #0f172a', display: 'inline-block', flexShrink: 0 }} /> {m}
             </div>
           ))}
         </div>
       </div>
 
       {/* Signatures */}
-      <div style={{ display: 'flex', gap: 20, justifyContent: 'flex-end', paddingTop: 6, borderTop: '1px solid var(--border)' }}>
+      <div style={{ display: 'flex', gap: 20, justifyContent: 'flex-end', paddingTop: 6, borderTop: '1px solid #e2e8f0' }}>
         <div style={{ textAlign: 'center' }}>
           <div style={{ fontSize: 10, color: 'rgba(15, 23, 42, 0.72)', marginBottom: 18 }}>Signature du Directeur</div>
-          <div style={{ borderTop: '1px solid var(--text)', paddingTop: 3, fontSize: 9, color: 'rgba(15, 23, 42, 0.72)' }}>Cachet et signature</div>
+          <div style={{ borderTop: '1px solid #0f172a', paddingTop: 3, fontSize: 9, color: 'rgba(15, 23, 42, 0.72)' }}>Cachet et signature</div>
         </div>
         <div style={{ textAlign: 'center' }}>
           <div style={{ fontSize: 10, color: 'rgba(15, 23, 42, 0.72)', marginBottom: 18 }}>Signature du Parent</div>
-          <div style={{ borderTop: '1px solid var(--text)', paddingTop: 3, fontSize: 9, color: 'rgba(15, 23, 42, 0.72)' }}>Signature</div>
+          <div style={{ borderTop: '1px solid #0f172a', paddingTop: 3, fontSize: 9, color: 'rgba(15, 23, 42, 0.72)' }}>Signature</div>
         </div>
       </div>
     </div>
