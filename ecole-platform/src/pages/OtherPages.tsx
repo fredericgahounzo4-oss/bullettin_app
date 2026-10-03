@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Classe, Matiere, Eleve, Note, User } from '../types';
-import { Check, X, Download, Users, TrendingUp, BookOpen, CheckCircle, Lock, Palette, Save, GraduationCap, Plus, Edit2, Trash2 } from 'lucide-react';
+import { Check, X, Download, Users, TrendingUp, BookOpen, CheckCircle, Lock, Palette, Save, GraduationCap, Plus, Edit2, Trash2, Printer } from 'lucide-react';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, LineChart, Line, Legend, RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis, Radar } from 'recharts';
 import { useSettings } from '../context/SettingsContext';
 import { useAuth } from '../context/AuthContext';
@@ -1062,6 +1062,7 @@ export const BulletinsPage: React.FC = () => {
             <div className="modal-header no-print">
               <div className="modal-title">Aperçu du bulletin</div>
               <div style={{ display: 'flex', gap: 8 }}>
+                <button className="btn btn-ghost btn-sm" onClick={() => window.print()}><Printer size={13} /> Imprimer</button>
                 <button className="btn btn-accent btn-sm" onClick={handleDownloadPdf} disabled={exporting}><Download size={13} /> {exporting ? 'Génération...' : 'Télécharger PDF'}</button>
                 <button className="btn btn-ghost btn-icon btn-sm" onClick={() => setViewEleve(null)}><X size={16} /></button>
               </div>
@@ -1689,6 +1690,7 @@ export const TitulairePage: React.FC = () => {
             <div className="modal-header no-print">
               <div className="modal-title">Bulletin</div>
               <div style={{ display: 'flex', gap: 8 }}>
+                <button className="btn btn-ghost btn-sm" onClick={() => window.print()}><Printer size={13} /> Imprimer</button>
                 <button className="btn btn-accent btn-sm" onClick={handleDownloadPdf} disabled={exporting}><Download size={13} /> {exporting ? 'Génération...' : 'Télécharger PDF'}</button>
                 <button className="btn btn-ghost btn-icon btn-sm" onClick={() => setViewEleve(null)}><X size={16} /></button>
               </div>
