@@ -715,7 +715,7 @@ export const BulletinPreview: React.FC<{ eleve: Eleve; classes: Classe[]; matier
   );
 
   return (
-    <div className="card bulletin-print" style={{ padding: '14px 18px', maxWidth: 920, margin: '0 auto', fontSize: 10, background: couleurFond }}>
+    <div className="card bulletin-print" style={{ padding: '14px 18px', maxWidth: 920, margin: '0 auto', fontSize: 10, background: couleurFond, color: '#0f172a' }}>
       {/* En-tête officiel */}
       <div style={{ display: 'grid', gridTemplateColumns: '60px 1fr 190px', gap: 8, alignItems: 'center', borderBottom: '2px solid #0f172a', paddingBottom: 6, marginBottom: 6 }}>
         {settings.logoUrl ? (
