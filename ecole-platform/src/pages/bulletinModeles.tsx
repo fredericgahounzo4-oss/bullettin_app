@@ -154,9 +154,10 @@ const Ligne: React.FC<{ label: string; value?: React.ReactNode; gras?: boolean }
   </div>
 );
 
-const Boite: React.FC<{ titre: string; hauteur?: number }> = ({ titre, hauteur = 44 }) => (
+const Boite: React.FC<{ titre: string; hauteur?: number; children?: React.ReactNode }> = ({ titre, hauteur = 44, children }) => (
   <div style={{ border: BORD, padding: 4, minHeight: hauteur }}>
     <div style={{ fontSize: 9, fontWeight: 700 }}>{titre}</div>
+    {children ? <div style={{ fontSize: 12, fontWeight: 700, textAlign: 'center', paddingTop: 6 }}>{children}</div> : null}
   </div>
 );
 
@@ -477,7 +478,7 @@ export const BulletinCollege: React.FC<{ d: BulletinData }> = ({ d }) => {
           </div>
         </div>
         <div style={{ display: 'grid', gap: 6 }}>
-          <Boite titre="Observations du Chef d'Établissement" hauteur={38} />
+          <Boite titre="Observations du Chef d'Établissement" hauteur={38}>{d.moyenneGenerale !== null ? d.mention : ''}</Boite>
           <Boite titre="Observations générales du Conseil des Profs" hauteur={38} />
         </div>
       </div>
