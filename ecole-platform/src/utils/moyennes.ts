@@ -15,14 +15,17 @@ const FACULTATIVE_KEYWORDS = [
 
 /**
  * Une matière "facultative" (EPS, Dessin, Éducation ménagère, Langues nationales,
- * Conduite...) n'entre JAMAIS dans le calcul de la moyenne générale — exactement
- * comme sur le bulletin imprimé, où elle apparaît dans une section séparée
- * "Matières facultatives" sans compter dans le total des points/coefficients.
+ * Conduite...) est seulement rangée dans la section "Matières facultatives" du bulletin
+ * (affichage). Elle COMPTE dans le total des points, le total des coefficients et la
+ * moyenne, comme sur les bulletins officiels (ex. EPS coef 1 incluse dans le total 21).
  */
 export const isFacultative = (nomMatiere: string) => {
   const n = normalizeNom(nomMatiere);
   return FACULTATIVE_KEYWORDS.some(k => n.includes(k));
 };
+
+/** Une matière entre dans les totaux/moyennes sauf si l'admin a décoché "compte dans la moyenne". */
+export const compteDansMoyenne = (m: Matiere) => m.compteDansMoyenne !== false;
 
 /**
  * Calcule la moyenne "officielle" d'un ensemble de notes, exactement comme sur le
@@ -54,8 +57,8 @@ export const moyenneEquilibree = (ns: Note[]): number | null => {
 
 /**
  * Moyenne générale d'UN élève, pondérée par le coefficient de chaque matière de sa classe
- * — exactement le calcul utilisé sur son bulletin. Les matières facultatives sont exclues
- * (comme sur le bulletin). À ne jamais remplacer par une moyenne brute de toutes ses notes
+ * — exactement le calcul utilisé sur son bulletin. Les matières facultatives (EPS...) sont incluses
+ * tant qu'elles sont cochées "compte dans la moyenne". À ne jamais remplacer par une moyenne brute de toutes ses notes
  * mélangées : deux matières n'ont pas forcément le même poids (ex. Maths coef. 5 vs
  * Dessin coef. 1), donc un simple pool de notes fausserait le résultat.
  */
@@ -68,7 +71,7 @@ export const moyenneGeneraleEleve = (
 ): number | null => {
   const classeObj = classes.find(c => c.nom === classeNom);
   if (!classeObj) return null;
-  const matieresDeLaClasse = matieres.filter(m => m.classeId === classeObj.id && !isFacultative(m.nom));
+  const matieresDeLaClasse = matieres.filter(m => m.classeId === classeObj.id && compteDansMoyenne(m));
   const parties = matieresDeLaClasse
     .map(m => ({ avg: moyenneEquilibree(notes.filter(n => n.eleveId === eleveId && n.matiereId === m.id)), coeff: m.coefficient }))
     .filter((x): x is { avg: number; coeff: number } => x.avg !== null);

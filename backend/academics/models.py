@@ -40,6 +40,11 @@ class Matiere(models.Model):
     )
     classe = models.ForeignKey(Classe, on_delete=models.CASCADE, related_name='matieres')
     couleur = models.CharField(max_length=7, default='#2563a8')
+    compte_dans_moyenne = models.BooleanField(
+        default=True,
+        help_text="Si coché, les points de cette matière (y compris EPS et autres matières facultatives) "
+                  "entrent dans le total des points, le total des coefficients et la moyenne.",
+    )
 
     class Meta:
         ordering = ['classe', 'nom']

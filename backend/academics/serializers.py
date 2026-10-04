@@ -17,7 +17,7 @@ class MatiereSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Matiere
-        fields = ['id', 'nom', 'coefficient', 'professeur', 'professeur_detail', 'classe', 'couleur']
+        fields = ['id', 'nom', 'coefficient', 'professeur', 'professeur_detail', 'classe', 'couleur', 'compte_dans_moyenne']
 
 
 class EleveSerializer(serializers.ModelSerializer):

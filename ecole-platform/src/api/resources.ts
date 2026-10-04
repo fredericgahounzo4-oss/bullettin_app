@@ -54,6 +54,7 @@ export const createMatiere = async (payload: Partial<Matiere>): Promise<Matiere>
     nom: payload.nom, coefficient: payload.coefficient,
     professeur: payload.professeurId ? Number(payload.professeurId) : null,
     classe: Number(payload.classeId), couleur: payload.couleur,
+    compte_dans_moyenne: payload.compteDansMoyenne !== false,
   }));
 export const updateMatiere = async (id: string, payload: Partial<Matiere>): Promise<Matiere> => {
   const body: Record<string, unknown> = {};
@@ -61,6 +62,7 @@ export const updateMatiere = async (id: string, payload: Partial<Matiere>): Prom
   if (payload.coefficient !== undefined) body.coefficient = payload.coefficient;
   if (payload.professeurId !== undefined) body.professeur = payload.professeurId ? Number(payload.professeurId) : null;
   if (payload.couleur !== undefined) body.couleur = payload.couleur;
+  if (payload.compteDansMoyenne !== undefined) body.compte_dans_moyenne = payload.compteDansMoyenne;
   return mapMatiere(await http.patch<any>(`/matieres/${id}/`, body));
 };
 export const deleteMatiere = async (id: string): Promise<void> => http.delete(`/matieres/${id}/`);

@@ -42,6 +42,8 @@ export interface Matiere {
   professeurId: string;
   classeId: string;
   couleur: string;
+  /** true (défaut) : la matière, même facultative (EPS...), compte dans le total et la moyenne. */
+  compteDansMoyenne?: boolean;
 }
 
 export interface Note {

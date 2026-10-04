@@ -11,7 +11,7 @@ import {
 } from '../api/resources';
 import { errorMessage } from '../api/client';
 import { mentionFor } from '../utils/mentions';
-import { moyenneEquilibree, moyenneGeneraleEleve, moyenneDunGroupeDeleves, isFacultative } from '../utils/moyennes';
+import { moyenneEquilibree, moyenneGeneraleEleve, moyenneDunGroupeDeleves, isFacultative, compteDansMoyenne } from '../utils/moyennes';
 
 // ===== CLASSES =====
 export const ClassesPage: React.FC = () => {
@@ -36,7 +36,7 @@ export const ClassesPage: React.FC = () => {
 
   // Gestion des matières
   const [matieresClasse, setMatieresClasse] = useState<Classe | null>(null);
-  const [matForm, setMatForm] = useState({ nom: '', coefficient: '1', professeurId: '', couleur: '#2563a8' });
+  const [matForm, setMatForm] = useState({ nom: '', coefficient: '1', professeurId: '', couleur: '#2563a8', compteDansMoyenne: true });
   const [editMatiere, setEditMatiere] = useState<Matiere | null>(null);
   const [matSaving, setMatSaving] = useState(false);
   const [matError, setMatError] = useState<string | null>(null);
@@ -120,19 +120,19 @@ export const ClassesPage: React.FC = () => {
   const openMatieres = (c: Classe) => {
     setMatieresClasse(c);
     setEditMatiere(null);
-    setMatForm({ nom: '', coefficient: '1', professeurId: '', couleur: '#2563a8' });
+    setMatForm({ nom: '', coefficient: '1', professeurId: '', couleur: '#2563a8', compteDansMoyenne: true });
     setMatError(null);
   };
 
   const openAddMatiere = () => {
     setEditMatiere(null);
-    setMatForm({ nom: '', coefficient: '1', professeurId: '', couleur: '#2563a8' });
+    setMatForm({ nom: '', coefficient: '1', professeurId: '', couleur: '#2563a8', compteDansMoyenne: true });
     setMatError(null);
   };
 
   const openEditMatiere = (m: Matiere) => {
     setEditMatiere(m);
-    setMatForm({ nom: m.nom, coefficient: String(m.coefficient), professeurId: m.professeurId || '', couleur: m.couleur || '#2563a8' });
+    setMatForm({ nom: m.nom, coefficient: String(m.coefficient), professeurId: m.professeurId || '', couleur: m.couleur || '#2563a8', compteDansMoyenne: m.compteDansMoyenne !== false });
     setMatError(null);
     matFormRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
   };
@@ -145,13 +145,13 @@ export const ClassesPage: React.FC = () => {
       if (editMatiere) {
         const updated = await updateMatiere(editMatiere.id, {
           nom: matForm.nom, coefficient: Number(matForm.coefficient),
-          professeurId: matForm.professeurId || null as any, couleur: matForm.couleur,
+          professeurId: matForm.professeurId || null as any, couleur: matForm.couleur, compteDansMoyenne: matForm.compteDansMoyenne,
         });
         setMatieres(prev => prev.map(m => m.id === editMatiere.id ? updated : m));
       } else {
         const created = await createMatiere({
           nom: matForm.nom, coefficient: Number(matForm.coefficient),
-          professeurId: matForm.professeurId || undefined, classeId: matieresClasse.id, couleur: matForm.couleur,
+          professeurId: matForm.professeurId || undefined, classeId: matieresClasse.id, couleur: matForm.couleur, compteDansMoyenne: matForm.compteDansMoyenne,
         });
         setMatieres(prev => [...prev, created]);
       }
@@ -368,6 +368,10 @@ export const ClassesPage: React.FC = () => {
                     <input className="form-control" type="color" value={matForm.couleur} onChange={e => setMatForm(f => ({ ...f, couleur: e.target.value }))} style={{ padding: 2, height: 38 }} />
                   </div>
                 </div>
+                <label style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 13, marginBottom: 10, cursor: 'pointer' }}>
+                  <input type="checkbox" checked={matForm.compteDansMoyenne} onChange={e => setMatForm(f => ({ ...f, compteDansMoyenne: e.target.checked }))} />
+                  Compte dans le total des points et la moyenne (à laisser coché pour l'EPS et les matières facultatives qui entrent dans le total)
+                </label>
                 <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end', marginTop: 4 }}>
                   {editMatiere && <button className="btn btn-ghost" onClick={openAddMatiere}>Annuler la modification</button>}
                   <button className="btn btn-primary" onClick={handleSaveMatiere} disabled={matSaving}>
@@ -648,17 +652,25 @@ export const BulletinPreview: React.FC<{ eleve: Eleve; classes: Classe[]; matier
 
   const rowsData = classeMatieres.map(computeRow);
 
-  const totalCoeff = rowsData.filter(r => r.moyDes2 !== null).reduce((s, r) => s + r.matiere.coefficient, 0);
-  const totalProduit = rowsData.filter(r => r.moyDes2 !== null).reduce((s, r) => s + (r.moyDes2 as number) * r.matiere.coefficient, 0);
-  const moyenneGenerale = totalCoeff ? totalProduit / totalCoeff : null;
-
   const facultativeRows = FACULTATIVE_MATCHERS.map(f => {
     const matched = facultativeMatieresConfig.find(m => f.keywords.some(k => normalizeNom(m.nom).includes(k)));
     return matched ? { label: matched.nom, row: computeRow(matched) } : { label: f.label, row: null };
   });
 
+  // Les matières facultatives (EPS...) comptent dans le total des points et des coefficients,
+  // comme sur le bulletin officiel — sauf si l'admin a décoché "compte dans la moyenne".
+  const rowsComptees = [
+    ...rowsData,
+    ...facultativeRows.map(f => f.row).filter((r): r is NonNullable<typeof r> => r !== null),
+  ].filter(r => compteDansMoyenne(r.matiere));
+  const matieresCompteesBulletin = rowsComptees.map(r => r.matiere);
+
+  const totalCoeff = rowsComptees.filter(r => r.moyDes2 !== null).reduce((s, r) => s + r.matiere.coefficient, 0);
+  const totalProduit = rowsComptees.filter(r => r.moyDes2 !== null).reduce((s, r) => s + (r.moyDes2 as number) * r.matiere.coefficient, 0);
+  const moyenneGenerale = totalCoeff ? totalProduit / totalCoeff : null;
+
   const moyenneEleveTrimestre = (eleveId: string, tri: 1 | 2 | 3) => {
-    const parties = classeMatieres.map(m => ({ avg: subjectAverages(eleveId, m.id, tri).moyDes2, coeff: m.coefficient })).filter((x): x is { avg: number; coeff: number } => x.avg !== null);
+    const parties = matieresCompteesBulletin.map(m => ({ avg: subjectAverages(eleveId, m.id, tri).moyDes2, coeff: m.coefficient })).filter((x): x is { avg: number; coeff: number } => x.avg !== null);
     if (!parties.length) return null;
     return parties.reduce((s, x) => s + x.avg * x.coeff, 0) / parties.reduce((s, x) => s + x.coeff, 0);
   };
@@ -927,7 +939,7 @@ export const BulletinsPage: React.FC = () => {
   const classeEleves = eleves.filter(e => e.classe === classeObj?.nom);
 
   const moyenneEleve = (eleveId: string) => {
-    const classeMatieres = matieres.filter(m => m.classeId === selectedClasse && !isFacultative(m.nom));
+    const classeMatieres = matieres.filter(m => m.classeId === selectedClasse && compteDansMoyenne(m));
     const eleveNotes = notes.filter(n => n.eleveId === eleveId && n.trimestre === selectedTrimestre);
     const parties = classeMatieres.map(m => {
       const avg = moyenneEquilibree(eleveNotes.filter(n => n.matiereId === m.id));
@@ -1521,7 +1533,7 @@ export const TitulairePage: React.FC = () => {
   const avgFor = (eleveId: string, matiereId: string) =>
     moyenneEquilibree(notes.filter(n => n.eleveId === eleveId && n.matiereId === matiereId && n.trimestre === selectedTrimestre));
   const moyenneGeneraleEleve = (eleveId: string) => {
-    const parties = classeMatieres.map(m => ({ avg: avgFor(eleveId, m.id), coeff: m.coefficient })).filter(x => x.avg !== null);
+    const parties = classeMatieres.filter(compteDansMoyenne).concat(matieres.filter(m => m.classeId === classeObj.id && isFacultative(m.nom) && compteDansMoyenne(m))).map(m => ({ avg: avgFor(eleveId, m.id), coeff: m.coefficient })).filter(x => x.avg !== null);
     if (!parties.length) return null;
     return parties.reduce((s, x) => s + (x.avg as number) * x.coeff, 0) / parties.reduce((s, x) => s + x.coeff, 0);
   };

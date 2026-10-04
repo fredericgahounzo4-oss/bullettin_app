@@ -25,6 +25,7 @@ export function mapMatiere(m: any): Matiere {
   return {
     id: s(m.id), nom: m.nom, coefficient: m.coefficient,
     professeurId: s(m.professeur), classeId: s(m.classe), couleur: m.couleur,
+    compteDansMoyenne: m.compte_dans_moyenne !== false,
   };
 }
 

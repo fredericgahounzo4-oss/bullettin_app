@@ -7,7 +7,7 @@ import { getClasseOfEleve, isTitulaireDeClasse, matieresVisibles, matieresEnseig
 import { mentionFor } from '../utils/mentions';
 import { fetchClasses, fetchMatieres, fetchEleves, fetchNotes, createNote, updateNote, deleteNote } from '../api/resources';
 import { errorMessage } from '../api/client';
-import { moyenneEquilibree, isFacultative } from '../utils/moyennes';
+import { moyenneEquilibree, compteDansMoyenne } from '../utils/moyennes';
 
 const getColor = (v: number) => v >= 14 ? 'note-high' : v >= 10 ? 'note-mid' : 'note-low';
 const appreciationOf = mentionFor;
@@ -43,7 +43,7 @@ const NotesParClasse: React.FC<NotesData> = ({ classes, matieres, eleves: allEle
   const classeObj = classes.find(c => c.id === selectedClasse);
   const classeEleves = allEleves.filter(e => e.classe === classeObj?.nom);
   const classeMatieres = matieres.filter(m => m.classeId === selectedClasse);
-  const classeMatieresNotees = classeMatieres.filter(m => !isFacultative(m.nom));
+  const classeMatieresNotees = classeMatieres.filter(compteDansMoyenne);
 
   const notesFor = (eleveId: string, matiereId: string) =>
     notes.filter(n => n.eleveId === eleveId && n.matiereId === matiereId && n.trimestre === selectedTrimestre);
@@ -391,7 +391,7 @@ const NotesParEleve: React.FC<NotesData> = ({ classes, matieres, eleves: allElev
   }).filter(x => x.notes.length > 0);
 
   const moyenneGenerale = (() => {
-    const partiesNonFacultatives = notesByMatiere.filter(x => !isFacultative(x.matiere.nom));
+    const partiesNonFacultatives = notesByMatiere.filter(x => compteDansMoyenne(x.matiere));
     if (!partiesNonFacultatives.length) return '—';
     return (partiesNonFacultatives.reduce((s, x) => s + (x.avg || 0) * x.matiere.coefficient, 0) /
        partiesNonFacultatives.reduce((s, x) => s + x.matiere.coefficient, 0)).toFixed(2);
