@@ -453,7 +453,14 @@ export const BulletinCollege: React.FC<{ d: BulletinData }> = ({ d }) => {
             />
           ))}
           <Ligne label={`Moy. annuelle — Rang ${rangTxt(d.annuel)}`} value={d.annuel ? fmt(d.annuel.moy) : ''} gras />
-          <Ligne label="Moy. la plus forte / la plus faible" value={`${fmt(cur?.maxi)} / ${fmt(cur?.mini)}`} />
+          <div style={{ display: 'flex', justifyContent: 'space-between', gap: 6, padding: '4px 0 2px', fontSize: 10, flexWrap: 'wrap' }}>
+            <span>
+              Moy. la plus forte : <b style={{ borderBottom: '1px solid #0f172a', padding: '0 8px' }}>{fmt(cur?.maxi)}</b> /20
+            </span>
+            <span>
+              Moy. la plus faible : <b style={{ borderBottom: '1px solid #0f172a', padding: '0 8px' }}>{fmt(cur?.mini)}</b> /20
+            </span>
+          </div>
         </div>
         <div style={{ display: 'grid', gap: 6 }}>
           <Boite titre="Observations du Chef d'Établissement" hauteur={38} />
