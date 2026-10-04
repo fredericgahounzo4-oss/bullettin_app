@@ -344,6 +344,7 @@ tbody tr:last-child td { border-bottom: none; }
   width: 100%; max-width: 560px;
   max-height: 90vh;
   overflow-y: auto;
+  overflow-x: hidden;
   box-shadow: var(--shadow-md);
 }
 .modal-header {
@@ -530,6 +531,7 @@ tbody tr:last-child td { border-bottom: none; }
 
 @media print {
   body * { visibility: hidden; }
+  .bulletin-scroll-wrap { overflow: visible !important; max-width: none !important; }
   .bulletin-print, .bulletin-print *, .receipt-print, .receipt-print * { visibility: visible; }
   .bulletin-print, .receipt-print {
     position: absolute;

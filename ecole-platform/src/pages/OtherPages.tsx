@@ -715,7 +715,8 @@ export const BulletinPreview: React.FC<{ eleve: Eleve; classes: Classe[]; matier
   );
 
   return (
-    <div className="card bulletin-print" style={{ padding: '14px 18px', maxWidth: 920, margin: '0 auto', fontSize: 10, background: couleurFond, color: '#0f172a' }}>
+    <div className="bulletin-scroll-wrap" style={{ overflowX: 'auto', WebkitOverflowScrolling: 'touch', maxWidth: '100%' }}>
+    <div className="card bulletin-print" style={{ padding: '14px 18px', maxWidth: 920, minWidth: 680, margin: '0 auto', fontSize: 10, background: couleurFond, color: '#0f172a' }}>
       {/* En-tête officiel */}
       <div style={{ display: 'grid', gridTemplateColumns: '60px 1fr 190px', gap: 8, alignItems: 'center', borderBottom: '2px solid #0f172a', paddingBottom: 6, marginBottom: 6 }}>
         {settings.logoUrl ? (
@@ -889,6 +890,7 @@ export const BulletinPreview: React.FC<{ eleve: Eleve; classes: Classe[]; matier
           <div style={{ borderTop: '1px solid #0f172a', paddingTop: 3, fontSize: 9, color: 'rgba(15, 23, 42, 0.72)' }}>Signature</div>
         </div>
       </div>
+    </div>
     </div>
   );
 };
