@@ -4,7 +4,7 @@ from rest_framework.decorators import action
 from rest_framework.exceptions import ValidationError
 from rest_framework.response import Response
 
-from .models import Classe, Matiere, Eleve, Note
+from .models import Classe, Matiere, Eleve, Note, MODELES_BULLETIN
 from .serializers import ClasseSerializer, MatiereSerializer, EleveSerializer, NoteSerializer
 from .permissions import classes_du_professeur, eleves_du_professeur
 
@@ -62,7 +62,14 @@ class ClasseViewSet(viewsets.ModelViewSet):
             classe.couleur_bulletin = request.data.get('couleur_bulletin') or ''
         if 'couleur_fond_bulletin' in request.data:
             classe.couleur_fond_bulletin = request.data.get('couleur_fond_bulletin') or ''
-        classe.save(update_fields=['couleur_bulletin', 'couleur_fond_bulletin'])
+        champs = ['couleur_bulletin', 'couleur_fond_bulletin']
+        if 'modele_bulletin' in request.data:
+            modele = request.data.get('modele_bulletin') or 'standard'
+            if modele not in dict(MODELES_BULLETIN):
+                return Response({'detail': 'Modèle de bulletin inconnu.'}, status=400)
+            classe.modele_bulletin = modele
+            champs.append('modele_bulletin')
+        classe.save(update_fields=champs)
         return Response(ClasseSerializer(classe).data)
 
 

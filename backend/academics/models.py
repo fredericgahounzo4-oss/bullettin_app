@@ -3,6 +3,14 @@ from django.db import models
 from django.core.validators import MinValueValidator, MaxValueValidator
 
 
+MODELES_BULLETIN = [
+    ('standard', 'Standard (trimestre)'),
+    ('lycee_semestre', 'Lycée — Semestre (sections littéraires / scientifiques / facultatives)'),
+    ('lycee_semestre_2', 'Lycée — Semestre (liste simple avec signatures)'),
+    ('college_trimestre', 'Collège — Trimestre (bulletin d\'évaluation)'),
+]
+
+
 class Classe(models.Model):
     nom = models.CharField(max_length=50, unique=True)
     niveau = models.CharField(max_length=50)  # ex: "Collège", "Lycée", "Primaire"
@@ -17,6 +25,10 @@ class Classe(models.Model):
     couleur_bulletin = models.CharField(
         max_length=7, blank=True, default='',
         help_text="Couleur d'accent du bulletin de cette classe (ex. #2563a8). Vide = couleur par défaut de l'établissement.",
+    )
+    modele_bulletin = models.CharField(
+        max_length=30, choices=MODELES_BULLETIN, default='standard',
+        help_text="Modèle d'impression du bulletin de cette classe (choisi par le titulaire ou l'admin).",
     )
     couleur_fond_bulletin = models.CharField(
         max_length=7, blank=True, default='',

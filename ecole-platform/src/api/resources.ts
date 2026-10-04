@@ -39,11 +39,12 @@ export const deleteClasse = async (id: string): Promise<void> => http.delete(`/c
  */
 export const updateClasseCouleur = async (
   id: string,
-  payload: { couleurBulletin?: string; couleurFondBulletin?: string }
+  payload: { couleurBulletin?: string; couleurFondBulletin?: string; modeleBulletin?: string }
 ): Promise<Classe> => {
   const body: Record<string, unknown> = {};
   if (payload.couleurBulletin !== undefined) body.couleur_bulletin = payload.couleurBulletin;
   if (payload.couleurFondBulletin !== undefined) body.couleur_fond_bulletin = payload.couleurFondBulletin;
+  if (payload.modeleBulletin !== undefined) body.modele_bulletin = payload.modeleBulletin;
   return mapClasse(await http.patch<any>(`/classes/${id}/couleur/`, body));
 };
 

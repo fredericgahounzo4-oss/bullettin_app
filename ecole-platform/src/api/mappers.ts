@@ -18,6 +18,7 @@ export function mapClasse(c: any): Classe {
     professeurPrincipalId: s(c.professeur_principal), anneeScolaire: c.annee_scolaire,
     couleurBulletin: c.couleur_bulletin || undefined,
     couleurFondBulletin: c.couleur_fond_bulletin || undefined,
+    modeleBulletin: c.modele_bulletin || 'standard',
   };
 }
 

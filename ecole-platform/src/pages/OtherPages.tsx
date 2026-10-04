@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Classe, Matiere, Eleve, Note, User } from '../types';
+import { Classe, Matiere, Eleve, Note, User, ModeleBulletin } from '../types';
 import { Check, X, Download, Users, TrendingUp, BookOpen, CheckCircle, Lock, Palette, Save, GraduationCap, Plus, Edit2, Trash2, Printer } from 'lucide-react';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, LineChart, Line, Legend, RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis, Radar } from 'recharts';
 import { useSettings } from '../context/SettingsContext';
@@ -12,6 +12,8 @@ import {
 import { errorMessage } from '../api/client';
 import { mentionFor } from '../utils/mentions';
 import { moyenneEquilibree, moyenneGeneraleEleve, moyenneDunGroupeDeleves, isFacultative, compteDansMoyenne } from '../utils/moyennes';
+import { MODELES_BULLETIN, modeleDe, nbPeriodes, periodesDe, periodeCourt, periodeNom } from '../utils/modelesBulletin';
+import { BulletinData, StatsPeriode, BulletinLyceeSemestre, BulletinLyceeSemestre2, BulletinCollege } from './bulletinModeles';
 
 // ===== CLASSES =====
 export const ClassesPage: React.FC = () => {
@@ -609,6 +611,8 @@ const FACULTATIVE_MATCHERS: { label: string; keywords: string[] }[] = [
 export const BulletinPreview: React.FC<{ eleve: Eleve; classes: Classe[]; matieres: Matiere[]; notes: Note[]; eleves: Eleve[]; professeurs: User[]; trimestre: 1 | 2 | 3 }> = ({ eleve, classes, matieres, notes, eleves, professeurs, trimestre }) => {
   const { settings } = useSettings();
   const classeObj = classes.find(c => c.nom === eleve.classe);
+  const modele = modeleDe(classeObj);
+  const nbP = nbPeriodes(modele);
   const allClasseMatieres = matieres.filter(m => m.classeId === classeObj?.id);
   const classeMatieres = allClasseMatieres.filter(m => !isFacultative(m.nom));
   const facultativeMatieresConfig = allClasseMatieres.filter(m => isFacultative(m.nom));
@@ -682,18 +686,17 @@ export const BulletinPreview: React.FC<{ eleve: Eleve; classes: Classe[]; matier
   })();
 
   const moyAnnuelleFor = (eleveId: string) => {
-    // Moyenne annuelle = (T1 + T2 + T3) / 3 — seulement calculable, et donc
-    // seulement affichée, une fois les 3 trimestres saisis (bulletin du 3e trimestre).
-    const t1 = moyenneEleveTrimestre(eleveId, 1);
-    const t2 = moyenneEleveTrimestre(eleveId, 2);
-    const t3 = moyenneEleveTrimestre(eleveId, 3);
-    if (t1 === null || t2 === null || t3 === null) return null;
-    return (t1 + t2 + t3) / 3;
+    // Moyenne annuelle = moyenne de toutes les périodes (3 trimestres, ou 2 semestres selon le
+    // modèle de bulletin) — seulement calculable, et donc seulement affichée, une fois toutes
+    // les périodes saisies (bulletin de la dernière période).
+    const valeurs = Array.from({ length: nbP }, (_, i) => moyenneEleveTrimestre(eleveId, (i + 1) as 1 | 2 | 3));
+    if (valeurs.some(v => v === null)) return null;
+    return (valeurs as number[]).reduce((a, b) => a + b, 0) / nbP;
   };
-  const moyenneAnnuelle = trimestre === 3 ? moyAnnuelleFor(eleve.id) : null;
+  const moyenneAnnuelle = trimestre === nbP ? moyAnnuelleFor(eleve.id) : null;
 
   const classementAnnuel = (() => {
-    if (trimestre !== 3) return '—';
+    if (trimestre !== nbP) return '—';
     const ranked = classeEleves.map(ce => ({ id: ce.id, moy: moyAnnuelleFor(ce.id) })).filter((x): x is { id: string; moy: number } => x.moy !== null).sort((a, b) => b.moy - a.moy);
     const idx = ranked.findIndex(x => x.id === eleve.id);
     return idx >= 0 ? `${idx + 1}${idx === 0 ? 'er' : 'ème'} / ${ranked.length}` : '—';
@@ -706,6 +709,39 @@ export const BulletinPreview: React.FC<{ eleve: Eleve; classes: Classe[]; matier
   const accent = classeObj?.couleurBulletin || settings.couleurBulletin || '#2563a8';
   const couleurFond = classeObj?.couleurFondBulletin || settings.couleurFondBulletin;
   const accentPale = hexToRgba(accent, 0.12);
+
+  // ---- Modèles de bulletin alternatifs (lycée semestre, collège...) : mêmes calculs, autre mise en page.
+  if (modele !== 'standard') {
+    const statsDe = (getMoy: (id: string) => number | null): StatsPeriode => {
+      const tous = classeEleves.map(ce => ({ id: ce.id, moy: getMoy(ce.id) })).filter((x): x is { id: string; moy: number } => x.moy !== null);
+      const tries = [...tous].sort((a, b) => b.moy - a.moy);
+      const idx = tries.findIndex(x => x.id === eleve.id);
+      const vals = tous.map(x => x.moy);
+      return {
+        moy: getMoy(eleve.id),
+        rang: idx >= 0 ? idx + 1 : null,
+        total: tous.length,
+        mini: vals.length ? Math.min(...vals) : null,
+        maxi: vals.length ? Math.max(...vals) : null,
+        moyClasse: vals.length ? vals.reduce((a, b) => a + b, 0) / vals.length : null,
+      };
+    };
+    const stats: Record<number, StatsPeriode> = {};
+    for (let t = 1; t <= nbP; t++) stats[t] = statsDe(id => moyenneEleveTrimestre(id, t as 1 | 2 | 3));
+    const annuel = trimestre === nbP && moyenneAnnuelle !== null ? statsDe(moyAnnuelleFor) : null;
+    const data: BulletinData = {
+      eleve: { nom: eleve.nom, prenom: eleve.prenom, classe: eleve.classe },
+      effectif: classeEleves.length,
+      settings, accent, accentPale, couleurFond,
+      periode: trimestre, nbPeriodes: nbP,
+      lignes: rowsData, facultatives: facultativeRows,
+      totalCoeff, totalProduit, moyenneGenerale,
+      stats, annuel, mention, appreciation: appreciationFor,
+    };
+    if (modele === 'lycee_semestre') return <BulletinLyceeSemestre d={data} />;
+    if (modele === 'lycee_semestre_2') return <BulletinLyceeSemestre2 d={data} />;
+    return <BulletinCollege d={data} />;
+  }
 
   const renderRow = (label: string, r: ReturnType<typeof computeRow> | null, key: string) => (
     <tr key={key} style={{ background: 'white' }}>
@@ -1011,14 +1047,14 @@ export const BulletinsPage: React.FC = () => {
           <div style={{ display: 'flex', gap: 16, flexWrap: 'wrap', alignItems: 'flex-end' }}>
             <div style={{ flex: 1, minWidth: 200 }}>
               <label className="form-label">Classe</label>
-              <select className="form-control" value={selectedClasse} onChange={e => setSelectedClasse(e.target.value)}>
+              <select className="form-control" value={selectedClasse} onChange={e => { setSelectedClasse(e.target.value); setSelectedTrimestre(1); }}>
                 {classes.map(c => <option key={c.id} value={c.id}>{c.nom} — {c.niveau}</option>)}
               </select>
             </div>
             <div>
-              <label className="form-label">Trimestre</label>
+              <label className="form-label">{periodeNom(classeObj, 1).split(' ')[0]}</label>
               <div style={{ display: 'flex', gap: 6 }}>
-                {([1, 2, 3] as const).map(t => <button key={t} className={`btn ${selectedTrimestre === t ? 'btn-primary' : 'btn-ghost'}`} onClick={() => setSelectedTrimestre(t)}>T{t}</button>)}
+                {periodesDe(classeObj).map(t => <button key={t} className={`btn ${selectedTrimestre === t ? 'btn-primary' : 'btn-ghost'}`} onClick={() => setSelectedTrimestre(t)}>{periodeCourt(classeObj, t)}</button>)}
               </div>
             </div>
           </div>
@@ -1132,7 +1168,7 @@ export const SettingsPage: React.FC = () => {
   // Couleur du bulletin, personnalisable par classe
   const [classes, setClasses] = useState<Classe[]>([]);
   const [selectedClasseId, setSelectedClasseId] = useState('');
-  const [classeCouleur, setClasseCouleur] = useState({ accent: '', fond: '' });
+  const [classeCouleur, setClasseCouleur] = useState<{ accent: string; fond: string; modele: ModeleBulletin }>({ accent: '', fond: '', modele: 'standard' });
   const [classeCouleurSaving, setClasseCouleurSaving] = useState(false);
   const [classeCouleurSaved, setClasseCouleurSaved] = useState(false);
   const [classeCouleurError, setClasseCouleurError] = useState<string | null>(null);
@@ -1150,6 +1186,7 @@ export const SettingsPage: React.FC = () => {
       setClasseCouleur({
         accent: c.couleurBulletin || settings.couleurBulletin || '#2563a8',
         fond: c.couleurFondBulletin || settings.couleurFondBulletin || '#ffffff',
+        modele: modeleDe(c),
       });
       setClasseCouleurError(null);
     }
@@ -1161,7 +1198,7 @@ export const SettingsPage: React.FC = () => {
     setClasseCouleurSaving(true);
     setClasseCouleurError(null);
     try {
-      const updated = await updateClasseCouleur(selectedClasseId, { couleurBulletin: classeCouleur.accent, couleurFondBulletin: classeCouleur.fond });
+      const updated = await updateClasseCouleur(selectedClasseId, { couleurBulletin: classeCouleur.accent, couleurFondBulletin: classeCouleur.fond, modeleBulletin: classeCouleur.modele });
       setClasses(prev => prev.map(c => c.id === updated.id ? updated : c));
       setClasseCouleurSaved(true);
       setTimeout(() => setClasseCouleurSaved(false), 2500);
@@ -1424,6 +1461,13 @@ export const SettingsPage: React.FC = () => {
                       {classes.map(c => <option key={c.id} value={c.id}>{c.nom}{c.couleurBulletin ? ' (personnalisée)' : ''}</option>)}
                     </select>
                   </div>
+                  <div className="form-group">
+                    <label className="form-label">Modèle de bulletin</label>
+                    <select className="form-control" value={classeCouleur.modele} onChange={e => setClasseCouleur(f => ({ ...f, modele: e.target.value as ModeleBulletin }))}>
+                      {MODELES_BULLETIN.map(m => <option key={m.key} value={m.key}>{m.label}</option>)}
+                    </select>
+                    <div style={{ fontSize: 12, color: 'var(--text-muted)', marginTop: 4 }}>{MODELES_BULLETIN.find(m => m.key === classeCouleur.modele)?.description}</div>
+                  </div>
                   <div className="form-row">
                     <div className="form-group">
                       <label className="form-label">Couleur d'accent</label>
@@ -1484,7 +1528,7 @@ export const TitulairePage: React.FC = () => {
   const bulletinRef = useRef<HTMLDivElement>(null);
   const allBulletinRefs = useRef<Record<string, HTMLDivElement | null>>({});
   const [couleurModalOpen, setCouleurModalOpen] = useState(false);
-  const [couleurForm, setCouleurForm] = useState({ accent: '#2563a8', fond: '#ffffff' });
+  const [couleurForm, setCouleurForm] = useState<{ accent: string; fond: string; modele: ModeleBulletin }>({ accent: '#2563a8', fond: '#ffffff', modele: 'standard' });
   const [couleurSaving, setCouleurSaving] = useState(false);
   const [couleurError, setCouleurError] = useState<string | null>(null);
 
@@ -1570,6 +1614,7 @@ export const TitulairePage: React.FC = () => {
     setCouleurForm({
       accent: classeObj.couleurBulletin || settings.couleurBulletin || '#2563a8',
       fond: classeObj.couleurFondBulletin || settings.couleurFondBulletin || '#ffffff',
+      modele: modeleDe(classeObj),
     });
     setCouleurError(null);
     setCouleurModalOpen(true);
@@ -1579,7 +1624,7 @@ export const TitulairePage: React.FC = () => {
     setCouleurSaving(true);
     setCouleurError(null);
     try {
-      const updated = await updateClasseCouleur(classeObj.id, { couleurBulletin: couleurForm.accent, couleurFondBulletin: couleurForm.fond });
+      const updated = await updateClasseCouleur(classeObj.id, { couleurBulletin: couleurForm.accent, couleurFondBulletin: couleurForm.fond, modeleBulletin: couleurForm.modele });
       setClasses(prev => prev.map(c => c.id === updated.id ? updated : c));
       setCouleurModalOpen(false);
     } catch (err) {
@@ -1628,7 +1673,7 @@ export const TitulairePage: React.FC = () => {
         <div className="modal-overlay" onClick={() => setCouleurModalOpen(false)}>
           <div className="modal" onClick={e => e.stopPropagation()}>
             <div className="modal-header">
-              <div className="modal-title">Couleur du bulletin — {classeObj.nom}</div>
+              <div className="modal-title">Modèle et couleur du bulletin — {classeObj.nom}</div>
               <button className="btn btn-ghost btn-icon btn-sm" onClick={() => setCouleurModalOpen(false)}><X size={16} /></button>
             </div>
             <div className="modal-body">
@@ -1637,6 +1682,13 @@ export const TitulairePage: React.FC = () => {
                 de l'établissement gardent la couleur par défaut, sauf si leur propre titulaire la change aussi.
               </p>
               {couleurError && <div style={{ background: 'var(--danger-pale)', color: 'var(--danger)', padding: '8px 12px', borderRadius: 8, fontSize: 13, marginBottom: 12 }}>{couleurError}</div>}
+              <div className="form-group">
+                <label className="form-label">Modèle de bulletin</label>
+                <select className="form-control" value={couleurForm.modele} onChange={e => setCouleurForm(f => ({ ...f, modele: e.target.value as ModeleBulletin }))}>
+                  {MODELES_BULLETIN.map(m => <option key={m.key} value={m.key}>{m.label}</option>)}
+                </select>
+                <div style={{ fontSize: 12, color: 'var(--text-muted)', marginTop: 4 }}>{MODELES_BULLETIN.find(m => m.key === couleurForm.modele)?.description}</div>
+              </div>
               <div className="form-row">
                 <div className="form-group">
                   <label className="form-label">Couleur d'accent</label>
@@ -1669,15 +1721,15 @@ export const TitulairePage: React.FC = () => {
           {mesClasses.length > 1 && (
             <div style={{ minWidth: 200 }}>
               <label className="form-label">Classe (dont vous êtes titulaire)</label>
-              <select className="form-control" value={selectedClasse} onChange={e => setSelectedClasse(e.target.value)}>
+              <select className="form-control" value={selectedClasse} onChange={e => { setSelectedClasse(e.target.value); setSelectedTrimestre(1); }}>
                 {mesClasses.map(c => <option key={c.id} value={c.id}>{c.nom}</option>)}
               </select>
             </div>
           )}
           <div>
-            <label className="form-label">Trimestre</label>
+            <label className="form-label">{periodeNom(classeObj, 1).split(' ')[0]}</label>
             <div style={{ display: 'flex', gap: 6 }}>
-              {([1, 2, 3] as const).map(t => <button key={t} className={`btn ${selectedTrimestre === t ? 'btn-primary' : 'btn-ghost'}`} onClick={() => setSelectedTrimestre(t)}>T{t}</button>)}
+              {periodesDe(classeObj).map(t => <button key={t} className={`btn ${selectedTrimestre === t ? 'btn-primary' : 'btn-ghost'}`} onClick={() => setSelectedTrimestre(t)}>{periodeCourt(classeObj, t)}</button>)}
             </div>
           </div>
         </div>

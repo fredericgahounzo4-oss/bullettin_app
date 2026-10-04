@@ -22,6 +22,8 @@ export interface Eleve {
   telephone: string;
 }
 
+export type ModeleBulletin = 'standard' | 'lycee_semestre' | 'lycee_semestre_2' | 'college_trimestre';
+
 export interface Classe {
   id: string;
   nom: string;
@@ -33,6 +35,8 @@ export interface Classe {
   couleurBulletin?: string;
   /** Couleur de fond du bulletin, propre à cette classe. Vide = couleur par défaut de l'établissement. */
   couleurFondBulletin?: string;
+  /** Modèle d'impression du bulletin de cette classe (défaut : standard). */
+  modeleBulletin?: ModeleBulletin;
 }
 
 export interface Matiere {
