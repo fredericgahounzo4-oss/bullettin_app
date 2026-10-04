@@ -389,6 +389,27 @@ export const BulletinLyceeSemestre2: React.FC<{ d: BulletinData }> = ({ d }) => 
   );
 };
 
+
+const rangCourt = (n: number) => (n === 1 ? '1er' : `${n}e`);
+const Trait: React.FC<{ children?: React.ReactNode; large?: number }> = ({ children, large = 38 }) => (
+  <span style={{ display: 'inline-block', minWidth: large, borderBottom: '1px solid #0f172a', textAlign: 'center', fontWeight: 700, padding: '0 3px' }}>
+    {children ?? '\u00a0'}
+  </span>
+);
+/** « Moy. du 1er Trim. ____/20 Rang ___ sur ___ » — valeurs sur un trait, comme sur le papier. */
+const MoyRang: React.FC<{ label: string; stats: StatsPeriode | null | undefined }> = ({ label, stats }) => (
+  <div style={{ padding: '3px 0', borderBottom: '1px dotted #94a3b8', whiteSpace: 'nowrap' }}>
+    {label} <Trait>{stats ? fmt(stats.moy) : null}</Trait> /20 Rang <Trait large={26}>{stats?.rang ? rangCourt(stats.rang) : null}</Trait> sur <Trait large={26}>{stats?.rang ? stats.total : null}</Trait>
+  </div>
+);
+/** Libellé suivi d'un trait à remplir (Retards, Absences...). */
+const Souligne: React.FC<{ label: string }> = ({ label }) => (
+  <div style={{ display: 'flex', alignItems: 'flex-end', gap: 4, padding: '3px 0' }}>
+    <span style={{ whiteSpace: 'nowrap' }}>{label}</span>
+    <span style={{ flex: 1, borderBottom: '1px solid #0f172a', height: 10 }} />
+  </div>
+);
+
 // ============================================================================
 // Modèle « Collège — Trimestre » — d'après le bulletin d'évaluation du CEG
 // ============================================================================
@@ -452,23 +473,26 @@ export const BulletinCollege: React.FC<{ d: BulletinData }> = ({ d }) => {
         </table>
       </div>
 
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1.5fr 1.2fr', gap: 8, marginTop: 8 }}>
-        <div style={{ border: BORD, padding: '4px 8px' }}>
+      {/* Bas du bulletin, comme sur le bulletin papier du CEG */}
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1.5fr 1.2fr', border: BORD, marginTop: 8, fontSize: 10 }}>
+        {/* Haut gauche : assiduité / distinctions / sanctions */}
+        <div style={{ padding: '4px 8px', borderRight: BORD, borderBottom: BORD }}>
           {['Retards', 'Félicitations', 'Absences', 'Punitions', "Tableau d'honneur", 'Avertissement', 'Blâme'].map(l => (
-            <Ligne key={l} label={l} />
+            <Souligne key={l} label={l} />
           ))}
         </div>
-        <div style={{ border: BORD, padding: '4px 8px' }}>
+
+        {/* Haut milieu : moyennes des trimestres, annuelle, plus forte / plus faible */}
+        <div style={{ padding: '4px 8px', borderRight: BORD, borderBottom: BORD }}>
           {Array.from({ length: d.nbPeriodes }, (_, i) => i + 1).map(p => (
-            <Ligne
+            <MoyRang
               key={p}
-              label={`Moy. du ${p === 1 ? '1er' : `${p}e`} trim. — Rang ${rangTxt(d.stats[p])}`}
-              value={p <= d.periode ? fmt(d.stats[p]?.moy) : ''}
-              gras={p === d.periode}
+              label={`Moy. du ${p === 1 ? '1er' : `${p}e`} Trim.`}
+              stats={p <= d.periode ? d.stats[p] : null}
             />
           ))}
-          <Ligne label={`Moy. annuelle — Rang ${rangTxt(d.annuel)}`} value={d.annuel ? fmt(d.annuel.moy) : ''} gras />
-          <div style={{ display: 'flex', justifyContent: 'space-between', gap: 6, padding: '4px 0 2px', fontSize: 10, flexWrap: 'wrap' }}>
+          <MoyRang label="Moy. annuelle" stats={d.annuel} />
+          <div style={{ display: 'flex', justifyContent: 'space-between', gap: 6, padding: '5px 0 2px', flexWrap: 'wrap' }}>
             <span>
               Moy. la plus forte : <b style={{ borderBottom: '1px solid #0f172a', padding: '0 8px' }}>{fmt(cur?.maxi)}</b> /20
             </span>
@@ -477,19 +501,29 @@ export const BulletinCollege: React.FC<{ d: BulletinData }> = ({ d }) => {
             </span>
           </div>
         </div>
-        <div style={{ display: 'grid', gap: 6 }}>
-          <Boite titre="Observations du Chef d'Établissement" hauteur={38}>{d.moyenneGenerale !== null ? d.mention : ''}</Boite>
-          <Boite titre="Observations générales du Conseil des Profs" hauteur={38} />
+
+        {/* Droite (sur les 2 lignes) : observations du chef d'établissement, date, directeur */}
+        <div style={{ gridRow: '1 / span 2', gridColumn: 3, padding: '4px 8px', display: 'flex', flexDirection: 'column' }}>
+          <div style={{ fontSize: 9, fontWeight: 700, marginBottom: 4 }}>Observations du Chef d'Établissement</div>
+          {[0, 1, 2].map(i => <div key={i} style={{ borderBottom: '1px dotted #475569', height: 16 }} />)}
+          <div style={{ marginTop: 'auto', paddingTop: 12 }}>
+            <div>{d.settings.ville}, le ____/____/______</div>
+            <div style={{ textAlign: 'center', marginTop: 6 }}>Le Directeur</div>
+            <div style={{ height: 40 }} />
+          </div>
         </div>
-      </div>
-      <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: 10, fontSize: 10 }}>
-        <div style={{ textAlign: 'center', minWidth: 200 }}>
-          <div>Nom et signature du Titulaire de la classe</div>
-          <div style={{ height: 34 }} />
+
+        {/* Bas gauche : titulaire */}
+        <div style={{ padding: '4px 8px', borderRight: BORD, minHeight: 56 }}>
+          <div style={{ fontSize: 8, fontWeight: 700 }}>Nom et Signature<br />du Titulaire de la Classe</div>
         </div>
-        <div style={{ textAlign: 'center', minWidth: 200 }}>
-          <div>Le Directeur</div>
-          <div style={{ height: 34 }} />
+
+        {/* Bas milieu : observations générales du conseil = la MENTION */}
+        <div style={{ padding: '4px 8px', borderRight: BORD, minHeight: 56 }}>
+          <div style={{ fontSize: 8, fontWeight: 700 }}>Observations Générales du Conseil des Profs.</div>
+          <div style={{ fontSize: 13, fontWeight: 800, textAlign: 'center', paddingTop: 6 }}>
+            {d.moyenneGenerale !== null ? d.mention : ''}
+          </div>
         </div>
       </div>
     </Cadre>
