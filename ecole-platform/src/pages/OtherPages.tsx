@@ -722,7 +722,7 @@ export const BulletinPreview: React.FC<{ eleve: Eleve; classes: Classe[]; matier
       <td style={{ padding: '3px 5px', textAlign: 'center', borderBottom: '1px solid #e2e8f0' }}>{r?.rang ? `${r.rang}/${r.totalClasse}` : '—'}</td>
       <td style={{ padding: '3px 5px', borderBottom: '1px solid #e2e8f0', fontSize: 9 }}>{r?.prof ? `${r.prof.prenom} ${r.prof.nom}` : '—'}</td>
       <td style={{ padding: '3px 5px', borderBottom: '1px solid #e2e8f0', fontSize: 9 }}>{r ? appreciationFor(r.moyDes2) : '—'}</td>
-      <td style={{ padding: '3px 5px', borderBottom: '1px solid #e2e8f0' }} />
+      <td style={{ padding: '3px 5px', borderBottom: '1px solid #e2e8f0', minWidth: 60 }} />
     </tr>
   );
 
@@ -789,28 +789,24 @@ export const BulletinPreview: React.FC<{ eleve: Eleve; classes: Classe[]; matier
               <th style={{ padding: '3px 5px', textAlign: 'center', fontSize: 8 }}>Rang</th>
               <th style={{ padding: '3px 5px', textAlign: 'left', fontSize: 8 }}>Prof</th>
               <th style={{ padding: '3px 5px', textAlign: 'left', fontSize: 8 }}>Appréc.</th>
-              <th style={{ padding: '3px 5px', textAlign: 'left', fontSize: 8 }}>Signature</th>
+              <th style={{ padding: '3px 5px', textAlign: 'left', fontSize: 8, minWidth: 60 }}>Signature</th>
             </tr>
           </thead>
           <tbody>
             {rowsData.map(r => renderRow(r.matiere.nom, r, r.matiere.id))}
+            {/* Matières facultatives : dans le MÊME tableau pour garder les mêmes colonnes (dont Signature) */}
+            <tr style={{ background: accentPale }}>
+              <td colSpan={12} style={{ textAlign: 'center', fontWeight: 700, fontSize: 10, padding: '4px 5px' }}>MATIÈRES FACULTATIVES</td>
+            </tr>
+            {facultativeRows.map((f, i) => renderRow(f.label, f.row, 'fac-' + i))}
             <tr style={{ background: accentPale, fontWeight: 700 }}>
               <td style={{ padding: '4px 5px' }}>TOTAL</td>
               <td colSpan={5} />
               <td style={{ padding: '4px 5px', textAlign: 'center' }}>{totalCoeff || '—'}</td>
               <td style={{ padding: '4px 5px', textAlign: 'center' }}>{totalProduit ? totalProduit.toFixed(2) : '—'}</td>
               <td colSpan={3} />
+              <td style={{ padding: '4px 5px' }} />
             </tr>
-          </tbody>
-        </table>
-      </div>
-
-      {/* Matières facultatives */}
-      <div style={{ textAlign: 'center', fontWeight: 700, fontSize: 10, margin: '6px 0 3px' }}>MATIÈRES FACULTATIVES</div>
-      <div className="table-wrap">
-        <table style={{ width: '100%', borderCollapse: 'collapse', marginBottom: 6 }}>
-          <tbody>
-            {facultativeRows.map((f, i) => renderRow(f.label, f.row, 'fac-' + i))}
           </tbody>
         </table>
       </div>
