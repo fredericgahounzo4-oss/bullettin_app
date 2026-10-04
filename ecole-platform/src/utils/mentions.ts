@@ -13,6 +13,8 @@
  */
 export const mentionFor = (avg: number | null): string => {
   if (avg === null || Number.isNaN(avg)) return '—';
+  // On compare la moyenne telle qu'elle est AFFICHÉE (2 décimales) : 9,996 s'affiche 10,00 → Passable.
+  avg = Math.round(avg * 100) / 100;
   if (avg >= 18) return 'Excellent';
   if (avg >= 16) return 'Très bien';
   if (avg >= 14) return 'Bien';
