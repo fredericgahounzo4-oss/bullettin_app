@@ -195,6 +195,10 @@ input, select, textarea {
 .table-wrap { overflow-x: auto; }
 table { width: 100%; border-collapse: collapse; }
 thead tr { background: var(--surface2); }
+/* Les en-têtes des bulletins gèrent leurs propres couleurs : sans cela, la 2e ligne d'en-tête
+   (fond clair global) recouvre les cellules rowSpan de la 1re ligne et coupe leur texte. */
+.bulletin-print thead tr { background: transparent; }
+.bulletin-print th { text-transform: none; letter-spacing: 0; border-bottom: none; }
 th { padding: 10px 16px; text-align: left; font-size: 11px; font-weight: 700; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.6px; border-bottom: 1px solid var(--border); }
 td { padding: 12px 16px; border-bottom: 1px solid var(--border); font-size: 13px; }
 tbody tr:hover { background: var(--surface2); }

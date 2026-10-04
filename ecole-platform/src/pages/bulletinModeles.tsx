@@ -75,6 +75,26 @@ const rangMatiere = (l: LigneBulletin | null) => (l?.rang ? `${ord(l.rang)} / ${
 
 const BORD = '1px solid #94a3b8';
 
+// ---- Lisibilité : le texte posé sur la couleur d'accent ou sur le fond de la classe doit rester lisible.
+const luminance = (hex?: string) => {
+  const c = (hex || '#ffffff').replace('#', '');
+  const full = c.length === 3 ? c.split('').map(x => x + x).join('') : c.padEnd(6, 'f').slice(0, 6);
+  const [r, g, b] = [0, 2, 4].map(i => {
+    const v = parseInt(full.slice(i, i + 2), 16) / 255;
+    return Number.isNaN(v) ? 1 : v <= 0.03928 ? v / 12.92 : Math.pow((v + 0.055) / 1.055, 2.4);
+  });
+  return 0.2126 * r + 0.7152 * g + 0.0722 * b;
+};
+const contraste = (a?: string, b?: string) => {
+  const [l1, l2] = [luminance(a), luminance(b)].sort((x, y) => y - x);
+  return (l1 + 0.05) / (l2 + 0.05);
+};
+/** Blanc ou quasi-noir, selon ce qui se lit le mieux sur cette couleur. */
+const texteSur = (fond?: string) => (luminance(fond) > 0.5 ? '#0f172a' : '#ffffff');
+/** Couleur d'accent pour du texte (titres) ; repli sur noir/blanc si elle se lit mal sur le fond. */
+const accentLisible = (d: { accent: string; couleurFond?: string }) =>
+  contraste(d.accent, d.couleurFond || '#ffffff') >= 3 ? d.accent : texteSur(d.couleurFond || '#ffffff');
+
 const Cadre: React.FC<{ d: BulletinData; children: React.ReactNode }> = ({ d, children }) => (
   <div className="bulletin-scroll-wrap" style={{ overflowX: 'auto', WebkitOverflowScrolling: 'touch', maxWidth: '100%' }}>
     <div className="card bulletin-print" style={{ padding: '14px 18px', maxWidth: 920, minWidth: 680, margin: '0 auto', fontSize: 10, background: d.couleurFond, color: '#0f172a' }}>
@@ -87,14 +107,14 @@ const EnTete: React.FC<{ d: BulletinData; titre: string; sousTitre: string }> = 
   const s = d.settings;
   return (
     <>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 10, marginBottom: 6, paddingBottom: 6, borderBottom: `2px solid ${d.accent}` }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 10, marginBottom: 6, paddingBottom: 6, borderBottom: `2px solid ${accentLisible(d)}` }}>
         <div style={{ fontSize: 9, fontWeight: 700, textTransform: 'uppercase', lineHeight: 1.3, maxWidth: 230 }}>{s.ministere}</div>
         <div style={{ textAlign: 'center', display: 'flex', alignItems: 'center', gap: 8 }}>
           {s.logoUrl ? (
             <img src={s.logoUrl} alt="Logo" style={{ width: 46, height: 46, borderRadius: '50%', objectFit: 'cover', border: `2px solid ${d.accent}` }} />
           ) : null}
           <div>
-            <div style={{ fontSize: 14, fontWeight: 800, color: d.accent, textTransform: 'uppercase' }}>{s.nomEcole}</div>
+            <div style={{ fontSize: 14, fontWeight: 800, color: accentLisible(d), textTransform: 'uppercase' }}>{s.nomEcole}</div>
             <div style={{ fontSize: 9, color: 'rgba(15, 23, 42, 0.72)', lineHeight: 1.3 }}>
               B.P: {s.bp} {s.ville}-{s.pays} — Tél : {s.telephone1}{s.telephone2 ? ` / ${s.telephone2}` : ''}
             </div>
@@ -106,7 +126,7 @@ const EnTete: React.FC<{ d: BulletinData; titre: string; sousTitre: string }> = 
         </div>
       </div>
       <div style={{ textAlign: 'center', margin: '6px 0 8px' }}>
-        <div style={{ fontSize: 14, fontWeight: 800, color: d.accent, letterSpacing: 0.5 }}>{titre}</div>
+        <div style={{ fontSize: 14, fontWeight: 800, color: accentLisible(d), letterSpacing: 0.5 }}>{titre}</div>
         <div style={{ fontSize: 11, fontWeight: 700 }}>{sousTitre}</div>
       </div>
       <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr 1fr 1fr', gap: 6, fontSize: 10, marginBottom: 8, border: BORD, padding: '5px 8px' }}>
@@ -120,7 +140,7 @@ const EnTete: React.FC<{ d: BulletinData; titre: string; sousTitre: string }> = 
 };
 
 const th = (d: BulletinData, extra?: React.CSSProperties): React.CSSProperties => ({
-  padding: '3px 4px', fontSize: 8, textAlign: 'center', border: BORD, background: d.accent, color: 'white', ...extra,
+  padding: '3px 4px', fontSize: 8, textAlign: 'center', border: BORD, background: d.accent, color: texteSur(d.accent), verticalAlign: 'middle', ...extra,
 });
 const td = (extra?: React.CSSProperties): React.CSSProperties => ({ padding: '3px 4px', border: BORD, textAlign: 'center', ...extra });
 
