@@ -349,12 +349,26 @@ export const BulletinLyceeSemestre2: React.FC<{ d: BulletinData }> = ({ d }) => 
           ))}
         </div>
         <div style={{ display: 'grid', gap: 6 }}>
-          <div style={{ border: BORD, padding: '4px 8px' }}>
-            {periodes.map(p => (
-              <Ligne key={p} label={`Moy. ${nomPeriodeCourt(true, p)} — Rang ${rangTxt(d.stats[p])}`} value={fmt(d.stats[p]?.moy)} gras={p === d.periode} />
-            ))}
-            {d.annuel && <Ligne label={`Moy. annuelle — Rang ${rangTxt(d.annuel)}`} value={fmt(d.annuel.moy)} gras />}
-            <Ligne label="Forte moy. / Faible moy. / Moy. gén." value={`${fmt(cur?.maxi)} / ${fmt(cur?.mini)} / ${fmt(cur?.moyClasse)}`} />
+          <div style={{ display: 'flex', gap: 8, alignItems: 'stretch' }}>
+            <div style={{ border: BORD, padding: '4px 8px', flex: 1 }}>
+              {periodes.map(p => (
+                <Ligne key={p} label={`Moy. ${nomPeriodeCourt(true, p)} — Rang ${rangTxt(d.stats[p])}`} value={fmt(d.stats[p]?.moy)} gras={p === d.periode} />
+              ))}
+              {d.annuel && <Ligne label={`Moy. annuelle — Rang ${rangTxt(d.annuel)}`} value={fmt(d.annuel.moy)} gras />}
+            </div>
+            {/* Encadré « Forte moy / Faible moy / Moy. géné » comme sur le bulletin papier */}
+            <div style={{ border: BORD, padding: '6px 10px', minWidth: 130, display: 'flex', flexDirection: 'column', justifyContent: 'center', gap: 6, fontSize: 10 }}>
+              {[
+                ['Forte moy.', cur?.maxi],
+                ['Faible moy.', cur?.mini],
+                ['Moy. géné.', cur?.moyClasse],
+              ].map(([label, v]) => (
+                <div key={label as string} style={{ display: 'flex', justifyContent: 'space-between', gap: 12 }}>
+                  <span>{label as string}</span>
+                  <b>{fmt(v as number | null | undefined)}</b>
+                </div>
+              ))}
+            </div>
           </div>
           <Boite titre={`Observations générales : ${d.mention}`} hauteur={34} />
           <Boite titre="Obs. & Décision du conseil" hauteur={34} />
