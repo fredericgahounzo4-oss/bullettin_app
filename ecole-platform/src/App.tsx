@@ -102,13 +102,17 @@ const AppContent: React.FC = () => {
 };
 
 const App: React.FC = () => (
-  <SettingsProvider>
-    <ConnectivityProvider>
-      <AuthProvider>
+  <ConnectivityProvider>
+    <AuthProvider>
+      {/* SettingsProvider doit être À L'INTÉRIEUR de AuthProvider : le thème (clair/sombre)
+          est une préférence personnelle par compte, pas un réglage partagé — il a donc
+          besoin de savoir qui est connecté pour ne jamais le mélanger entre deux comptes
+          utilisés sur le même navigateur (ex. admin et professeur sur le même ordinateur). */}
+      <SettingsProvider>
         <AppContent />
-      </AuthProvider>
-    </ConnectivityProvider>
-  </SettingsProvider>
+      </SettingsProvider>
+    </AuthProvider>
+  </ConnectivityProvider>
 );
 
 export default App;

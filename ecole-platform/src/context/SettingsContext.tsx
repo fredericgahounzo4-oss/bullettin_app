@@ -1,5 +1,6 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { Langue, translations } from '../i18n';
+import { useAuth } from './AuthContext';
 
 export interface AppSettings {
   nomEcole: string;
@@ -51,6 +52,11 @@ const DEFAULT_SETTINGS: AppSettings = {
 };
 
 const STORAGE_KEY = 'edumanage-settings';
+// Le thème (clair/sombre) est une préférence PERSONNELLE, propre à chaque compte — jamais
+// partagée. Stocké sous une clé distincte par utilisateur pour que deux comptes différents
+// utilisés sur le même navigateur (ex. admin et professeur sur le même ordinateur) ne se
+// "volent" jamais leur préférence l'un l'autre.
+const themeStorageKey = (userId?: string) => `edumanage-theme-${userId || 'invite'}`;
 
 interface SettingsContextType {
   settings: AppSettings;
@@ -77,13 +83,25 @@ const loadInitial = (): AppSettings => {
 };
 
 export const SettingsProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
+  const { user } = useAuth();
   const [settings, setSettings] = useState<AppSettings>(loadInitial);
 
+  // Dès qu'on sait qui est connecté (à la connexion, ou si on change de compte sur le même
+  // navigateur), on charge LE THÈME DE CE COMPTE-LÀ spécifiquement — jamais celui laissé par
+  // un autre compte utilisé avant sur cet ordinateur.
   useEffect(() => {
+    const saved = localStorage.getItem(themeStorageKey(user?.id));
+    setSettings(prev => ({ ...prev, theme: saved === 'sombre' ? 'sombre' : 'clair' }));
+  }, [user?.id]);
+
+  useEffect(() => {
+    // Réglages de l'établissement (nom, logo, couleur par défaut...) : partagés, inchangé.
     localStorage.setItem(STORAGE_KEY, JSON.stringify(settings));
     document.documentElement.classList.toggle('dark', settings.theme === 'sombre');
     document.documentElement.lang = settings.langue;
-  }, [settings]);
+    // Thème : sauvegardé séparément, propre à l'utilisateur connecté.
+    if (user?.id) localStorage.setItem(themeStorageKey(user.id), settings.theme);
+  }, [settings, user?.id]);
 
   const updateSettings = (patch: Partial<AppSettings>) => setSettings(prev => ({ ...prev, ...patch }));
 
