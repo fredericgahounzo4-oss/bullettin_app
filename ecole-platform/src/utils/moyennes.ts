@@ -8,6 +8,7 @@ const normalizeNom = (nom: string) => nom.normalize('NFD').replace(/[\u0300-\u03
 const FACULTATIVE_KEYWORDS = [
   'eps', 'sport', 'education physique',
   'dessin',
+  'agricult',
   'menager', 'menagere',
   'langue national',
   'conduite',

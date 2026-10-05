@@ -529,3 +529,230 @@ export const BulletinCollege: React.FC<{ d: BulletinData }> = ({ d }) => {
     </Cadre>
   );
 };
+
+// ============================================================================
+// Modèle « Standard (trimestre) » — d'après le bulletin de notes du Complexe Scolaire St MARTIAL
+// ============================================================================
+const CaseACocher: React.FC<{ label: React.ReactNode }> = ({ label }) => (
+  <div style={{ display: 'flex', alignItems: 'center', gap: 5, padding: '2px 0' }}>
+    <span style={{ width: 9, height: 9, border: '1px solid #0f172a', display: 'inline-block', flexShrink: 0 }} />
+    <span>{label}</span>
+  </div>
+);
+
+/** Ligne « Libellé : ........ » à remplir à la main. */
+const Pointille: React.FC<{ label: string; haut?: number }> = ({ label, haut = 16 }) => (
+  <div style={{ display: 'flex', alignItems: 'flex-end', gap: 4, minHeight: haut, padding: '2px 0' }}>
+    <span style={{ whiteSpace: 'nowrap' }}>{label}</span>
+    <span style={{ flex: 1, borderBottom: '1px dotted #0f172a', height: 10 }} />
+  </div>
+);
+
+export const BulletinStandard: React.FC<{ d: BulletinData }> = ({ d }) => {
+  const s = d.settings;
+  const lignesCompteesPrincipales = d.lignes.filter(l => l.moyDes2 !== null && l.matiere.compteDansMoyenne !== false);
+  const sousTotalCoef = lignesCompteesPrincipales.reduce((a, l) => a + l.matiere.coefficient, 0);
+  const sousTotalProduit = lignesCompteesPrincipales.reduce((a, l) => a + (l.moyDes2 as number) * l.matiere.coefficient, 0);
+  const cur = d.stats[d.periode];
+  const periodes = Array.from({ length: d.nbPeriodes }, (_, i) => i + 1);
+  const trimNom = (p: number) => (p === 1 ? '1er' : `${p}e`);
+
+  const ligne = (label: string, l: LigneBulletin | null, key: string) => (
+    <tr key={key}>
+      <td style={td({ textAlign: 'left', fontWeight: 600 })}>{label}</td>
+      <td style={td()}>{fmt(l?.moyInterro)}</td>
+      <td style={td()}>{fmt(l?.moyDevoir)}</td>
+      <td style={td({ color: 'rgba(15, 23, 42, 0.72)' })}>{fmt(l?.moyClasse)}</td>
+      <td style={td()}>{fmt(l?.moyComp)}</td>
+      <td style={td({ fontWeight: 700, color: couleurNote(l?.moyDes2 ?? null) })}>{fmt(l?.moyDes2)}</td>
+      <td style={td()}>{l ? l.matiere.coefficient : '—'}</td>
+      <td style={td()}>{l && l.moyDes2 !== null ? (l.moyDes2 * l.matiere.coefficient).toFixed(2) : '—'}</td>
+      <td style={td()}>{rangMatiere(l)}</td>
+      <td style={td({ fontSize: 9, textAlign: 'left' })}>{profNom(l)}</td>
+      <td style={td({ fontSize: 9 })}>{l ? d.appreciation(l.moyDes2) : '—'}</td>
+      <td style={td({ minWidth: 60 })} />
+    </tr>
+  );
+
+  const ligneBilan = (label: string, coef: React.ReactNode, valeur: React.ReactNode, extra?: React.ReactNode) => (
+    <tr key={label} style={{ background: d.accentPale, fontWeight: 700 }}>
+      <td style={td({ textAlign: 'left' })}>{label}</td>
+      <td style={td()} colSpan={5} />
+      <td style={td()}>{coef}</td>
+      <td style={td()}>{valeur}</td>
+      <td style={td({ fontSize: 9 })} colSpan={4}>{extra}</td>
+    </tr>
+  );
+
+  const ok = d.moyenneGenerale !== null;
+
+  return (
+    <Cadre d={d}>
+      {/* En-tête, comme sur le bulletin papier */}
+      <div style={{ display: 'grid', gridTemplateColumns: '1.3fr 1fr 1fr', gap: 8, alignItems: 'start', paddingBottom: 6, marginBottom: 6, borderBottom: `2px solid ${accentLisible(d)}` }}>
+        <div>
+          <div style={{ fontSize: 9, fontWeight: 700, textTransform: 'uppercase', lineHeight: 1.3 }}>{s.ministere}</div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginTop: 4 }}>
+            {s.logoUrl ? (
+              <img src={s.logoUrl} alt="Logo" style={{ width: 48, height: 48, borderRadius: '50%', objectFit: 'cover', border: `2px solid ${accentLisible(d)}` }} />
+            ) : null}
+            <div>
+              <div style={{ fontSize: 13, fontWeight: 800, color: accentLisible(d) }}>{s.nomEcole}</div>
+              <div style={{ fontSize: 9, lineHeight: 1.3 }}>
+                B.P: {s.bp} {s.ville}-{s.pays}<br />
+                Tél : {s.telephone1}{s.telephone2 ? ` / ${s.telephone2}` : ''}
+              </div>
+            </div>
+          </div>
+        </div>
+        <div style={{ textAlign: 'center' }}>
+          <div style={{ fontSize: 13, fontWeight: 800 }}>BULLETIN DE NOTES N°....</div>
+          <div style={{ fontSize: 10, marginTop: 2 }}>DU <b>{d.periode === 1 ? '1er' : `${d.periode}e`}</b> Trimestre</div>
+          <div style={{ display: 'flex', gap: 14, fontSize: 9, justifyContent: 'center', marginTop: 6 }}>
+            <CaseACocher label="Doublant" />
+            <CaseACocher label="Nouveau" />
+          </div>
+        </div>
+        <div style={{ textAlign: 'right', fontSize: 9, fontWeight: 700 }}>
+          <div>{s.republique.toUpperCase()}</div>
+          <div style={{ fontWeight: 400, fontSize: 8, marginTop: 1 }}>{s.deviseNationale}</div>
+        </div>
+      </div>
+
+      <div style={{ display: 'grid', gridTemplateColumns: '1.4fr 1fr 1fr', gap: 4, fontSize: 10, marginBottom: 2 }}>
+        <div>Année scolaire <b>{s.anneeScolaire}</b></div>
+        <div>Classe <b>{d.eleve.classe}</b></div>
+        <div>Effectif <b>{d.effectif}</b></div>
+      </div>
+      <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 10, marginBottom: 6, flexWrap: 'wrap', gap: 6 }}>
+        <div>NOM ET PRÉNOMS DE L'ÉLÈVE : <b>{d.eleve.nom} {d.eleve.prenom}</b></div>
+        <div>N°MLE <b>—</b></div>
+      </div>
+
+      {/* Tableau principal */}
+      <div className="table-wrap">
+        <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+          <thead>
+            <tr>
+              <th style={th(d, { textAlign: 'left' })}>MATIÈRES</th>
+              <th style={th(d)}>Notes d'interro. sur 20</th>
+              <th style={th(d)}>Notes de devoir sur 20</th>
+              <th style={th(d)}>Moy. Class. sur 20</th>
+              <th style={th(d)}>Notes de Comp. sur 20</th>
+              <th style={th(d)}>Moy. des 2 Notes sur 20</th>
+              <th style={th(d)}>Coef</th>
+              <th style={th(d)}>Produit</th>
+              <th style={th(d)}>Rang</th>
+              <th style={th(d)}>NOM DES PROF.</th>
+              <th style={th(d)}>APPRÉCIATIONS GÉN. DES PROFESSEURS</th>
+              <th style={th(d, { minWidth: 60 })}>SIGNATURE</th>
+            </tr>
+          </thead>
+          <tbody>
+            {d.lignes.map(l => ligne(l.matiere.nom, l, l.matiere.id))}
+            <tr style={{ background: d.accentPale, fontWeight: 700 }}>
+              <td style={td({ textAlign: 'left' })}>TOTAL</td>
+              <td style={td()} colSpan={5} />
+              <td style={td()}>{sousTotalCoef || '—'}</td>
+              <td style={td()}>{sousTotalProduit ? sousTotalProduit.toFixed(2) : '—'}</td>
+              <td style={td()} colSpan={4} />
+            </tr>
+            <tr>
+              <td colSpan={12} style={td({ fontWeight: 800, letterSpacing: 2, padding: '5px 4px', background: d.accentPale })}>MATIÈRES FACULTATIVES</td>
+            </tr>
+            {d.facultatives.map((f, i) => ligne(f.label, f.row, 'fac-' + i))}
+            {ligneBilan('MAJORATION :', '', '')}
+            {ligneBilan('TOTAL DES POINTS :', d.totalCoeff || '—', d.totalProduit ? d.totalProduit.toFixed(2) : '—')}
+            {ligneBilan('Moyenne du Trimestre', '', ok ? `${fmt(d.moyenneGenerale)} /20` : '—', ok ? d.mention : '')}
+            {ligneBilan('Classement du Trimestre', '', rangTxt(cur))}
+            {ligneBilan('Moyenne annuelle', '', d.annuel ? `${fmt(d.annuel.moy)} /20` : '')}
+            {ligneBilan('Classement annuel', '', d.annuel ? rangTxt(d.annuel) : '')}
+          </tbody>
+        </table>
+      </div>
+
+      {/* Moyennes des trimestres + moyenne forte / faible / de classe */}
+      <div className="table-wrap" style={{ marginTop: 8 }}>
+        <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+          <thead>
+            <tr>
+              <th style={th(d, { textAlign: 'left' })}>BILAN DES MOYENNES</th>
+              {periodes.map(p => <th key={p} style={th(d)}>{trimNom(p)} Trimestre</th>)}
+              <th style={th(d)}>Annuelle</th>
+            </tr>
+          </thead>
+          <tbody>
+            {([
+              ['Moyenne de l\'élève', (x: StatsPeriode | null) => fmt(x?.moy)],
+              ['Rang', (x: StatsPeriode | null) => (x && x.rang ? `${ord(x.rang)} / ${x.total}` : '—')],
+              ['Moyenne la plus forte', (x: StatsPeriode | null) => fmt(x?.maxi)],
+              ['Moyenne la plus faible', (x: StatsPeriode | null) => fmt(x?.mini)],
+              ['Moyenne de la classe', (x: StatsPeriode | null) => fmt(x?.moyClasse)],
+            ] as [string, (x: StatsPeriode | null) => string][]).map(([label, f]) => (
+              <tr key={label}>
+                <td style={td({ textAlign: 'left', fontWeight: 600 })}>{label}</td>
+                {periodes.map(p => <td key={p} style={td()}>{p <= d.periode ? f(d.stats[p] ?? null) : '—'}</td>)}
+                <td style={td({ fontWeight: 700 })}>{f(d.annuel)}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+
+      {/* Bas du bulletin : distinctions, résultat, assiduité, décision / observations */}
+      <div style={{ display: 'grid', gridTemplateColumns: '1.25fr 1fr', gap: 8, marginTop: 8, fontSize: 10 }}>
+        <div style={{ border: BORD, padding: '6px 8px' }}>
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
+            <div>
+              <CaseACocher label="Th + Félicitations" />
+              <CaseACocher label="Th + Encouragement" />
+              <CaseACocher label="Tableau d'honneur" />
+              <CaseACocher label="Avertissement pour le travail" />
+              <CaseACocher label="Blâme pour le travail" />
+            </div>
+            <div>
+              <div style={{ fontWeight: 800, textAlign: 'center', textDecoration: 'underline', marginBottom: 2 }}>RÉSULTAT</div>
+              <CaseACocher label="Satisfaisant" />
+              <CaseACocher label="Tout juste moyen" />
+              <CaseACocher label="Médiocre, Nul" />
+              <CaseACocher label="Très faible" />
+              <CaseACocher label="Ne fait aucun effort" />
+            </div>
+          </div>
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10, marginTop: 6 }}>
+            <div>
+              <Pointille label="Assiduité" />
+              <Pointille label="Travail" />
+              <Pointille label="Nbre d'absence" />
+            </div>
+            <div>
+              <Pointille label="Conduite" />
+              <Pointille label="Nbre de Retenues" />
+            </div>
+          </div>
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10, marginTop: 4 }}>
+            <div>
+              <Pointille label="Passe en" />
+              <Pointille label="Double la" />
+            </div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap' }}>
+              <span>Exclu pour</span>
+              <CaseACocher label="Insuffisance de travail" />
+              <CaseACocher label="Discipline" />
+            </div>
+          </div>
+        </div>
+
+        <div style={{ border: BORD, padding: '6px 8px', display: 'flex', flexDirection: 'column' }}>
+          <Pointille label="Observation du Titulaire :" haut={30} />
+          <Pointille label="Moyenne Annuelle en toutes lettres :" haut={30} />
+          <Pointille label="Décision et Observation du Conseil :" haut={30} />
+          <div style={{ marginTop: 'auto', textAlign: 'right', fontWeight: 800, paddingTop: 8 }}>
+            LE DIRECTEUR GÉNÉRAL
+            <div style={{ height: 40 }} />
+          </div>
+        </div>
+      </div>
+    </Cadre>
+  );
+};
