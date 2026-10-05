@@ -574,16 +574,6 @@ export const BulletinStandard: React.FC<{ d: BulletinData }> = ({ d }) => {
     </tr>
   );
 
-  const ligneBilan = (label: string, coef: React.ReactNode, valeur: React.ReactNode, extra?: React.ReactNode) => (
-    <tr key={label} style={{ background: d.accentPale, fontWeight: 700 }}>
-      <td style={td({ textAlign: 'left' })}>{label}</td>
-      <td style={td()} colSpan={5} />
-      <td style={td()}>{coef}</td>
-      <td style={td()}>{valeur}</td>
-      <td style={td({ fontSize: 9 })} colSpan={4}>{extra}</td>
-    </tr>
-  );
-
   const ok = d.moyenneGenerale !== null;
 
   return (
@@ -606,11 +596,15 @@ export const BulletinStandard: React.FC<{ d: BulletinData }> = ({ d }) => {
           </div>
         </div>
         <div style={{ textAlign: 'center' }}>
-          <div style={{ fontSize: 13, fontWeight: 800 }}>BULLETIN DE NOTES N°....</div>
-          <div style={{ fontSize: 10, marginTop: 2 }}>DU <b>{d.periode === 1 ? '1er' : `${d.periode}e`}</b> Trimestre</div>
-          <div style={{ display: 'flex', gap: 14, fontSize: 9, justifyContent: 'center', marginTop: 6 }}>
-            <CaseACocher label="Doublant" />
-            <CaseACocher label="Nouveau" />
+          <div style={{ fontSize: 15, fontWeight: 800 }}>BULLETIN DE NOTES N° ....</div>
+          <div style={{ fontSize: 11, marginTop: 4, display: 'flex', alignItems: 'flex-end', justifyContent: 'center', gap: 4 }}>
+            <span>DU</span>
+            <span style={{ borderBottom: '1px dotted #0f172a', minWidth: 70, textAlign: 'center', fontWeight: 800 }}>{d.periode === 1 ? '1er' : `${d.periode}e`}</span>
+            <span>Trimestre</span>
+          </div>
+          <div style={{ display: 'flex', justifyContent: 'space-between', gap: 14, fontSize: 10, marginTop: 8 }}>
+            <span style={{ display: 'flex', alignItems: 'center', gap: 5 }}>Doublant <span style={{ width: 26, height: 16, border: '1px solid #0f172a', display: 'inline-block' }} /></span>
+            <span style={{ display: 'flex', alignItems: 'center', gap: 5 }}>Nouveau <span style={{ width: 26, height: 16, border: '1px solid #0f172a', display: 'inline-block' }} /></span>
           </div>
         </div>
         <div style={{ textAlign: 'right', fontSize: 9, fontWeight: 700 }}>
@@ -661,48 +655,81 @@ export const BulletinStandard: React.FC<{ d: BulletinData }> = ({ d }) => {
               <td colSpan={12} style={td({ fontWeight: 800, letterSpacing: 2, padding: '5px 4px', background: d.accentPale })}>MATIÈRES FACULTATIVES</td>
             </tr>
             {d.facultatives.map((f, i) => ligne(f.label, f.row, 'fac-' + i))}
-            {ligneBilan('MAJORATION :', '', '')}
-            {ligneBilan('TOTAL DES POINTS :', d.totalCoeff || '—', d.totalProduit ? d.totalProduit.toFixed(2) : '—')}
-            {ligneBilan('Moyenne du Trimestre', '', ok ? `${fmt(d.moyenneGenerale)} /20` : '—', ok ? d.mention : '')}
-            {ligneBilan('Classement du Trimestre', '', rangTxt(cur))}
-            {ligneBilan('Moyenne annuelle', '', d.annuel ? `${fmt(d.annuel.moy)} /20` : '')}
-            {ligneBilan('Classement annuel', '', d.annuel ? rangTxt(d.annuel) : '')}
           </tbody>
         </table>
       </div>
 
-      {/* Moyennes des trimestres + moyenne forte / faible / de classe */}
-      <div className="table-wrap" style={{ marginTop: 8 }}>
-        <table style={{ width: '100%', borderCollapse: 'collapse' }}>
-          <thead>
-            <tr>
-              <th style={th(d, { textAlign: 'left' })}>BILAN DES MOYENNES</th>
-              {periodes.map(p => <th key={p} style={th(d)}>{trimNom(p)} Trimestre</th>)}
-              <th style={th(d)}>Annuelle</th>
-            </tr>
-          </thead>
+      {/* Résumé (à gauche) + observations (à droite), comme sur le papier */}
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1.15fr', gap: 8, marginTop: 6, fontSize: 10 }}>
+        <table style={{ width: '100%', borderCollapse: 'collapse', alignSelf: 'start' }}>
           <tbody>
             {([
-              ['Moyenne de l\'élève', (x: StatsPeriode | null) => fmt(x?.moy)],
-              ['Rang', (x: StatsPeriode | null) => (x && x.rang ? `${ord(x.rang)} / ${x.total}` : '—')],
-              ['Moyenne la plus forte', (x: StatsPeriode | null) => fmt(x?.maxi)],
-              ['Moyenne la plus faible', (x: StatsPeriode | null) => fmt(x?.mini)],
-              ['Moyenne de la classe', (x: StatsPeriode | null) => fmt(x?.moyClasse)],
-            ] as [string, (x: StatsPeriode | null) => string][]).map(([label, f]) => (
+              ['MAJORATION :', '', true],
+              ['TOTAL DES POINTS :', d.totalProduit ? <>{d.totalProduit.toFixed(2)} <span style={{ fontWeight: 400, fontSize: 8 }}>(coef {d.totalCoeff})</span></> : '—', true],
+              ['Moyenne du Trimestre', ok ? <>{fmt(d.moyenneGenerale)} /20 <span style={{ fontWeight: 400, fontSize: 8 }}>({d.mention})</span></> : '—'],
+              ['Classement du Trimestre', rangTxt(cur)],
+              ['Moyenne annuelle', d.annuel ? `${fmt(d.annuel.moy)} /20` : ''],
+              ['Classement annuel', d.annuel ? rangTxt(d.annuel) : ''],
+            ] as [string, React.ReactNode, boolean?][]).map(([label, val, gras]) => (
+              <tr key={label}>
+                <td style={td({ textAlign: 'left', fontWeight: gras ? 800 : 600, width: '55%' })}>{label}</td>
+                <td style={td({ fontWeight: 700 })}>{val}</td>
+              </tr>
+            ))}
+            {/* Ajouts demandés : moyennes des trimestres, plus forte, plus faible, moyenne de la classe */}
+            <tr style={{ background: d.accentPale }}>
+              <td colSpan={2} style={td({ textAlign: 'left', fontWeight: 800, fontSize: 9 })}>MOYENNES DES TRIMESTRES ET DE LA CLASSE</td>
+            </tr>
+            {periodes.map(p => (
+              <tr key={'t' + p}>
+                <td style={td({ textAlign: 'left', fontWeight: 600 })}>Moyenne du {trimNom(p)} Trimestre</td>
+                <td style={td({ fontWeight: 700 })}>
+                  {p <= d.periode && d.stats[p]?.moy !== null && d.stats[p]?.moy !== undefined
+                    ? <>{fmt(d.stats[p].moy)} /20 <span style={{ fontWeight: 400, fontSize: 8 }}>({d.stats[p].rang ? `${ord(d.stats[p].rang as number)} / ${d.stats[p].total}` : '—'})</span></>
+                    : ''}
+                </td>
+              </tr>
+            ))}
+            {([
+              ['Moyenne la plus forte', cur?.maxi],
+              ['Moyenne la plus faible', cur?.mini],
+              ['Moyenne de la classe', cur?.moyClasse],
+            ] as [string, number | null | undefined][]).map(([label, v]) => (
               <tr key={label}>
                 <td style={td({ textAlign: 'left', fontWeight: 600 })}>{label}</td>
-                {periodes.map(p => <td key={p} style={td()}>{p <= d.periode ? f(d.stats[p] ?? null) : '—'}</td>)}
-                <td style={td({ fontWeight: 700 })}>{f(d.annuel)}</td>
+                <td style={td({ fontWeight: 700 })}>{v !== null && v !== undefined ? `${fmt(v)} /20` : ''}</td>
               </tr>
             ))}
           </tbody>
         </table>
+
+        <div style={{ display: 'flex', flexDirection: 'column', justifyContent: 'space-between', gap: 6 }}>
+          <div>
+            <div>Observation du Titulaire :</div>
+            {[0, 1].map(i => <div key={i} style={{ borderBottom: '1px dotted #0f172a', height: 20 }} />)}
+          </div>
+          <div>
+            <div>Moyenne Annuelle en toutes lettres :</div>
+            {[0, 1].map(i => <div key={i} style={{ borderBottom: '1px dotted #0f172a', height: 20 }} />)}
+          </div>
+          <div>
+            <div>Décision et Observation du Conseil :</div>
+            {[0, 1].map(i => <div key={i} style={{ borderBottom: '1px dotted #0f172a', height: 20 }} />)}
+          </div>
+        </div>
       </div>
 
-      {/* Bas du bulletin : distinctions, résultat, assiduité, décision / observations */}
-      <div style={{ display: 'grid', gridTemplateColumns: '1.25fr 1fr', gap: 8, marginTop: 8, fontSize: 10 }}>
-        <div style={{ border: BORD, padding: '6px 8px' }}>
+      {/* Bas du bulletin : un seul cadre à 3 colonnes, comme sur le papier */}
+      <div style={{ display: 'grid', gridTemplateColumns: '1.5fr 1fr 1fr', border: BORD, marginTop: 8, fontSize: 10 }}>
+        <div style={{ padding: '6px 8px', borderRight: BORD }}>
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
+            <Pointille label="Assiduité" />
+            <Pointille label="Conduite" />
+            <Pointille label="Travail" />
+            <Pointille label="Nbre de Retenues" />
+            <Pointille label="Nbre d'absence" />
+          </div>
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10, marginTop: 8 }}>
             <div>
               <CaseACocher label="Th + Félicitations" />
               <CaseACocher label="Th + Encouragement" />
@@ -711,7 +738,7 @@ export const BulletinStandard: React.FC<{ d: BulletinData }> = ({ d }) => {
               <CaseACocher label="Blâme pour le travail" />
             </div>
             <div>
-              <div style={{ fontWeight: 800, textAlign: 'center', textDecoration: 'underline', marginBottom: 2 }}>RÉSULTAT</div>
+              <div style={{ fontWeight: 800, textDecoration: 'underline', marginBottom: 2 }}>RÉSULTAT</div>
               <CaseACocher label="Satisfaisant" />
               <CaseACocher label="Tout juste moyen" />
               <CaseACocher label="Médiocre, Nul" />
@@ -719,38 +746,19 @@ export const BulletinStandard: React.FC<{ d: BulletinData }> = ({ d }) => {
               <CaseACocher label="Ne fait aucun effort" />
             </div>
           </div>
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10, marginTop: 6 }}>
-            <div>
-              <Pointille label="Assiduité" />
-              <Pointille label="Travail" />
-              <Pointille label="Nbre d'absence" />
-            </div>
-            <div>
-              <Pointille label="Conduite" />
-              <Pointille label="Nbre de Retenues" />
-            </div>
-          </div>
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10, marginTop: 4 }}>
-            <div>
-              <Pointille label="Passe en" />
-              <Pointille label="Double la" />
-            </div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap' }}>
-              <span>Exclu pour</span>
-              <CaseACocher label="Insuffisance de travail" />
-              <CaseACocher label="Discipline" />
-            </div>
+        </div>
+        <div style={{ padding: '6px 8px', borderRight: BORD }}>
+          <Pointille label="Passe en" haut={22} />
+          <Pointille label="Double la" haut={22} />
+          <div style={{ marginTop: 10 }}>
+            <div>Exclu pour</div>
+            <CaseACocher label={<i>Insuffisance de travail</i>} />
+            <CaseACocher label={<i>Discipline</i>} />
           </div>
         </div>
-
-        <div style={{ border: BORD, padding: '6px 8px', display: 'flex', flexDirection: 'column' }}>
-          <Pointille label="Observation du Titulaire :" haut={30} />
-          <Pointille label="Moyenne Annuelle en toutes lettres :" haut={30} />
-          <Pointille label="Décision et Observation du Conseil :" haut={30} />
-          <div style={{ marginTop: 'auto', textAlign: 'right', fontWeight: 800, paddingTop: 8 }}>
-            LE DIRECTEUR GÉNÉRAL
-            <div style={{ height: 40 }} />
-          </div>
+        <div style={{ padding: '6px 8px', textAlign: 'center' }}>
+          <div style={{ fontWeight: 800 }}>LE DIRECTEUR GÉNÉRAL</div>
+          <div style={{ height: 70 }} />
         </div>
       </div>
     </Cadre>
