@@ -678,11 +678,11 @@ export const BulletinStandard: React.FC<{ d: BulletinData }> = ({ d }) => {
             ))}
             {/* Ajouts demandés : moyennes des trimestres, plus forte, plus faible, moyenne de la classe */}
             <tr style={{ background: d.accentPale }}>
-              <td colSpan={2} style={td({ textAlign: 'left', fontWeight: 800, fontSize: 9 })}>MOYENNES DES TRIMESTRES ET DE LA CLASSE</td>
+              <td colSpan={2} style={td({ textAlign: 'left', fontWeight: 800, fontSize: 9 })}>MOYENNES</td>
             </tr>
             {periodes.map(p => (
               <tr key={'t' + p}>
-                <td style={td({ textAlign: 'left', fontWeight: 600 })}>Moyenne du {trimNom(p)} Trimestre</td>
+                <td style={td({ textAlign: 'left', fontWeight: 600 })}>Moy. du {trimNom(p)} Trim.</td>
                 <td style={td({ fontWeight: 700 })}>
                   {p <= d.periode && d.stats[p]?.moy !== null && d.stats[p]?.moy !== undefined
                     ? <>{fmt(d.stats[p].moy)} /20 <span style={{ fontWeight: 400, fontSize: 8 }}>({d.stats[p].rang ? `${ord(d.stats[p].rang as number)} / ${d.stats[p].total}` : '—'})</span></>
@@ -691,9 +691,9 @@ export const BulletinStandard: React.FC<{ d: BulletinData }> = ({ d }) => {
               </tr>
             ))}
             {([
-              ['Moyenne la plus forte', cur?.maxi],
-              ['Moyenne la plus faible', cur?.mini],
-              ['Moyenne de la classe', cur?.moyClasse],
+              ['Moy. la plus forte', cur?.maxi],
+              ['Moy. la plus faible', cur?.mini],
+              ['Moy. de la classe', cur?.moyClasse],
             ] as [string, number | null | undefined][]).map(([label, v]) => (
               <tr key={label}>
                 <td style={td({ textAlign: 'left', fontWeight: 600 })}>{label}</td>
