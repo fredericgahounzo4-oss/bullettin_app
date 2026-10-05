@@ -1,6 +1,10 @@
 import jsPDF from 'jspdf';
 import html2canvas from 'html2canvas';
 import JSZip from 'jszip';
+import { getOrientationBulletin } from './orientationBulletin';
+
+/** Orientation de page jsPDF selon le choix portrait / paysage du bulletin. */
+const orientationPdf = () => (getOrientationBulletin() === 'paysage' ? 'landscape' : 'portrait');
 
 /**
  * Capture un élément du DOM et le télécharge directement en PDF A4, une
@@ -14,7 +18,7 @@ export async function downloadElementAsPdf(element: HTMLElement, filename: strin
     useCORS: true,
     backgroundColor: '#ffffff',
   });
-  const pdf = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
+  const pdf = new jsPDF({ orientation: orientationPdf(), unit: 'mm', format: 'a4' });
   addCanvasAsPage(pdf, canvas);
   pdf.save(filename);
 }
@@ -32,7 +36,7 @@ export async function downloadElementAsPdf(element: HTMLElement, filename: strin
  * de le capturer.
  */
 export async function downloadElementsAsPdf(elements: HTMLElement[], filename: string): Promise<void> {
-  const pdf = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
+  const pdf = new jsPDF({ orientation: orientationPdf(), unit: 'mm', format: 'a4' });
   for (let i = 0; i < elements.length; i++) {
     const el = elements[i];
     el.scrollIntoView({ block: 'start' });
@@ -72,7 +76,7 @@ export async function downloadElementsAsSeparatePdfsZip(
       useCORS: true,
       backgroundColor: '#ffffff',
     });
-    const pdf = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
+    const pdf = new jsPDF({ orientation: orientationPdf(), unit: 'mm', format: 'a4' });
     addCanvasAsPage(pdf, canvas);
     const blob = pdf.output('blob');
     zip.file(filename, blob);
