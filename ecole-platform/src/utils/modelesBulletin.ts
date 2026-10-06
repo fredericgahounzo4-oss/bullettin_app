@@ -1,4 +1,4 @@
-import { Classe, ModeleBulletin } from '../types';
+import { Classe, ModeleBulletin, OrientationBulletin } from '../types';
 
 export const MODELES_BULLETIN: { key: ModeleBulletin; label: string; description: string }[] = [
   { key: 'standard', label: 'Standard (trimestre)', description: "Modèle par défaut de l'application, par trimestre." },
@@ -16,3 +16,9 @@ export const periodeNom = (c: Pick<Classe, 'modeleBulletin'> | undefined | null,
   `${estSemestriel(modeleDe(c)) ? 'Semestre' : 'Trimestre'} ${t}`;
 export const periodeCourt = (c: Pick<Classe, 'modeleBulletin'> | undefined | null, t: number) =>
   `${estSemestriel(modeleDe(c)) ? 'S' : 'T'}${t}`;
+
+export const ORIENTATIONS_BULLETIN: { key: OrientationBulletin; label: string }[] = [
+  { key: 'portrait', label: 'Portrait (vertical)' },
+  { key: 'paysage', label: 'Paysage (horizontal)' },
+];
+export const orientationDe = (c?: Pick<Classe, 'orientationBulletin'> | null): OrientationBulletin => c?.orientationBulletin || 'portrait';

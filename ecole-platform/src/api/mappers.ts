@@ -19,6 +19,7 @@ export function mapClasse(c: any): Classe {
     couleurBulletin: c.couleur_bulletin || undefined,
     couleurFondBulletin: c.couleur_fond_bulletin || undefined,
     modeleBulletin: c.modele_bulletin || 'standard',
+    orientationBulletin: c.orientation_bulletin || 'portrait',
   };
 }
 

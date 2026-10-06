@@ -1,12 +1,10 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Classe, Matiere, Eleve, Note, User, ModeleBulletin } from '../types';
+import { Classe, Matiere, Eleve, Note, User, ModeleBulletin, OrientationBulletin } from '../types';
 import { Check, X, Download, Users, TrendingUp, BookOpen, CheckCircle, Lock, Palette, Save, GraduationCap, Plus, Edit2, Trash2, Printer } from 'lucide-react';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, LineChart, Line, Legend, RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis, Radar } from 'recharts';
 import { useSettings } from '../context/SettingsContext';
 import { useAuth } from '../context/AuthContext';
 import { downloadElementAsPdf, downloadElementsAsSeparatePdfsZip } from '../utils/pdfExport';
-import { useOrientationBulletin } from '../utils/orientationBulletin';
-import { OrientationToggle } from '../components/OrientationToggle';
 import {
   fetchClasses, fetchMatieres, fetchEleves, fetchNotes,
   fetchUsersByRole, createClasse, updateClasse, deleteClasse, updateClasseCouleur, createMatiere, updateMatiere, deleteMatiere,
@@ -14,7 +12,7 @@ import {
 import { errorMessage } from '../api/client';
 import { mentionFor } from '../utils/mentions';
 import { moyenneEquilibree, moyenneGeneraleEleve, moyenneDunGroupeDeleves, isFacultative, compteDansMoyenne } from '../utils/moyennes';
-import { MODELES_BULLETIN, modeleDe, nbPeriodes, periodesDe, periodeCourt, periodeNom } from '../utils/modelesBulletin';
+import { MODELES_BULLETIN, ORIENTATIONS_BULLETIN, modeleDe, orientationDe, nbPeriodes, periodesDe, periodeCourt, periodeNom } from '../utils/modelesBulletin';
 import { BulletinData, StatsPeriode, BulletinLyceeSemestre, BulletinLyceeSemestre2, BulletinCollege, BulletinStandard } from './bulletinModeles';
 
 // ===== CLASSES =====
@@ -726,6 +724,7 @@ export const BulletinPreview: React.FC<{ eleve: Eleve; classes: Classe[]; matier
     lignes: rowsData, facultatives: facultativeRows,
     totalCoeff, totalProduit, moyenneGenerale,
     stats, annuel, mention, appreciation: appreciationFor,
+    orientation: orientationDe(classeObj),
   };
   if (modele === 'lycee_semestre') return <BulletinLyceeSemestre d={data} />;
   if (modele === 'lycee_semestre_2') return <BulletinLyceeSemestre2 d={data} />;
@@ -759,7 +758,6 @@ export const BulletinsPage: React.FC = () => {
   const [viewAllClasse, setViewAllClasse] = useState(false);
   const [exporting, setExporting] = useState(false);
   const bulletinRef = useRef<HTMLDivElement>(null);
-  const orientation = useOrientationBulletin();
   const allBulletinRefs = useRef<Record<string, HTMLDivElement | null>>({});
 
   const classeObj = classes.find(c => c.id === selectedClasse);
@@ -782,7 +780,7 @@ export const BulletinsPage: React.FC = () => {
     if (!bulletinRef.current || !viewEleveObj || exporting) return;
     setExporting(true);
     try {
-      await downloadElementAsPdf(bulletinRef.current, bulletinFilename(viewEleveObj));
+      await downloadElementAsPdf(bulletinRef.current, bulletinFilename(viewEleveObj), orientationDe(classeObj));
     } finally {
       setExporting(false);
     }
@@ -796,7 +794,7 @@ export const BulletinsPage: React.FC = () => {
       if (!el || !e) return;
       setExporting(true);
       try {
-        await downloadElementAsPdf(el, bulletinFilename(e));
+        await downloadElementAsPdf(el, bulletinFilename(e), orientationDe(classeObj));
       } finally {
         setExporting(false);
       }
@@ -813,7 +811,7 @@ export const BulletinsPage: React.FC = () => {
     try {
       // Un PDF séparé par élève, regroupés dans un seul ZIP téléchargé — plus pratique
       // pour partager ou imprimer le bulletin d'un élève en particulier.
-      await downloadElementsAsSeparatePdfsZip(items, `bulletins-${classeObj?.nom || 'classe'}-T${selectedTrimestre}.zip`.replace(/\s+/g, '_'));
+      await downloadElementsAsSeparatePdfsZip(items, `bulletins-${classeObj?.nom || 'classe'}-T${selectedTrimestre}.zip`.replace(/\s+/g, '_'), orientationDe(classeObj));
     } finally {
       setExporting(false);
     }
@@ -903,11 +901,10 @@ export const BulletinsPage: React.FC = () => {
       {/* Aperçu du bulletin sélectionné */}
       {viewEleve && viewEleveObj && (
         <div className="modal-overlay bulletin-modal-overlay" onClick={() => setViewEleve(null)}>
-          <div className="modal bulletin-modal" onClick={e => e.stopPropagation()} style={{ maxWidth: orientation === 'paysage' ? 1200 : 760 }}>
+          <div className="modal bulletin-modal" onClick={e => e.stopPropagation()} style={{ maxWidth: 760 }}>
             <div className="modal-header no-print">
               <div className="modal-title">Aperçu du bulletin</div>
-              <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
-                <OrientationToggle />
+              <div style={{ display: 'flex', gap: 8 }}>
                 <button className="btn btn-ghost btn-sm" onClick={() => window.print()}><Printer size={13} /> Imprimer</button>
                 <button className="btn btn-accent btn-sm" onClick={handleDownloadPdf} disabled={exporting}><Download size={13} /> {exporting ? 'Génération...' : 'Télécharger PDF'}</button>
                 <button className="btn btn-ghost btn-icon btn-sm" onClick={() => setViewEleve(null)}><X size={16} /></button>
@@ -925,11 +922,10 @@ export const BulletinsPage: React.FC = () => {
       {/* Tous les bulletins de la classe, un par page dans un seul PDF */}
       {viewAllClasse && (
         <div className="modal-overlay bulletin-modal-overlay" onClick={() => setViewAllClasse(false)}>
-          <div className="modal bulletin-modal" onClick={e => e.stopPropagation()} style={{ maxWidth: orientation === 'paysage' ? 1200 : 760 }}>
+          <div className="modal bulletin-modal" onClick={e => e.stopPropagation()} style={{ maxWidth: 760 }}>
             <div className="modal-header no-print">
               <div className="modal-title">Tous les bulletins — {classeObj?.nom} ({classeEleves.length})</div>
-              <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
-                <OrientationToggle />
+              <div style={{ display: 'flex', gap: 8 }}>
                 <button className="btn btn-accent btn-sm" onClick={handleDownloadAllPdf} disabled={exporting}><Download size={13} /> {exporting ? 'Génération...' : 'Télécharger (ZIP, un PDF par élève)'}</button>
                 <button className="btn btn-ghost btn-icon btn-sm" onClick={() => setViewAllClasse(false)}><X size={16} /></button>
               </div>
@@ -965,7 +961,7 @@ export const SettingsPage: React.FC = () => {
   // Couleur du bulletin, personnalisable par classe
   const [classes, setClasses] = useState<Classe[]>([]);
   const [selectedClasseId, setSelectedClasseId] = useState('');
-  const [classeCouleur, setClasseCouleur] = useState<{ accent: string; fond: string; modele: ModeleBulletin }>({ accent: '', fond: '', modele: 'standard' });
+  const [classeCouleur, setClasseCouleur] = useState<{ accent: string; fond: string; modele: ModeleBulletin; orientation: OrientationBulletin }>({ accent: '', fond: '', modele: 'standard', orientation: 'portrait' });
   const [classeCouleurSaving, setClasseCouleurSaving] = useState(false);
   const [classeCouleurSaved, setClasseCouleurSaved] = useState(false);
   const [classeCouleurError, setClasseCouleurError] = useState<string | null>(null);
@@ -984,6 +980,7 @@ export const SettingsPage: React.FC = () => {
         accent: c.couleurBulletin || settings.couleurBulletin || '#2563a8',
         fond: c.couleurFondBulletin || settings.couleurFondBulletin || '#ffffff',
         modele: modeleDe(c),
+        orientation: orientationDe(c),
       });
       setClasseCouleurError(null);
     }
@@ -995,7 +992,7 @@ export const SettingsPage: React.FC = () => {
     setClasseCouleurSaving(true);
     setClasseCouleurError(null);
     try {
-      const updated = await updateClasseCouleur(selectedClasseId, { couleurBulletin: classeCouleur.accent, couleurFondBulletin: classeCouleur.fond, modeleBulletin: classeCouleur.modele });
+      const updated = await updateClasseCouleur(selectedClasseId, { couleurBulletin: classeCouleur.accent, couleurFondBulletin: classeCouleur.fond, modeleBulletin: classeCouleur.modele, orientationBulletin: classeCouleur.orientation });
       setClasses(prev => prev.map(c => c.id === updated.id ? updated : c));
       setClasseCouleurSaved(true);
       setTimeout(() => setClasseCouleurSaved(false), 2500);
@@ -1265,6 +1262,12 @@ export const SettingsPage: React.FC = () => {
                     </select>
                     <div style={{ fontSize: 12, color: 'var(--text-muted)', marginTop: 4 }}>{MODELES_BULLETIN.find(m => m.key === classeCouleur.modele)?.description}</div>
                   </div>
+                  <div className="form-group">
+                    <label className="form-label">Format de page (impression / PDF)</label>
+                    <select className="form-control" value={classeCouleur.orientation} onChange={e => setClasseCouleur(f => ({ ...f, orientation: e.target.value as OrientationBulletin }))}>
+                      {ORIENTATIONS_BULLETIN.map(o => <option key={o.key} value={o.key}>{o.label}</option>)}
+                    </select>
+                  </div>
                   <div className="form-row">
                     <div className="form-group">
                       <label className="form-label">Couleur d'accent</label>
@@ -1323,10 +1326,9 @@ export const TitulairePage: React.FC = () => {
   const [viewAllClasse, setViewAllClasse] = useState(false);
   const [exporting, setExporting] = useState(false);
   const bulletinRef = useRef<HTMLDivElement>(null);
-  const orientation = useOrientationBulletin();
   const allBulletinRefs = useRef<Record<string, HTMLDivElement | null>>({});
   const [couleurModalOpen, setCouleurModalOpen] = useState(false);
-  const [couleurForm, setCouleurForm] = useState<{ accent: string; fond: string; modele: ModeleBulletin }>({ accent: '#2563a8', fond: '#ffffff', modele: 'standard' });
+  const [couleurForm, setCouleurForm] = useState<{ accent: string; fond: string; modele: ModeleBulletin; orientation: OrientationBulletin }>({ accent: '#2563a8', fond: '#ffffff', modele: 'standard', orientation: 'portrait' });
   const [couleurSaving, setCouleurSaving] = useState(false);
   const [couleurError, setCouleurError] = useState<string | null>(null);
 
@@ -1387,7 +1389,7 @@ export const TitulairePage: React.FC = () => {
     if (!bulletinRef.current || !viewEleveObj || exporting) return;
     setExporting(true);
     try {
-      await downloadElementAsPdf(bulletinRef.current, bulletinFilename(viewEleveObj));
+      await downloadElementAsPdf(bulletinRef.current, bulletinFilename(viewEleveObj), orientationDe(classeObj));
     } finally {
       setExporting(false);
     }
@@ -1402,7 +1404,7 @@ export const TitulairePage: React.FC = () => {
     setExporting(true);
     try {
       // Un PDF séparé par élève, regroupés dans un seul ZIP téléchargé.
-      await downloadElementsAsSeparatePdfsZip(items, `bulletins-${classeObj?.nom || 'classe'}-T${selectedTrimestre}.zip`.replace(/\s+/g, '_'));
+      await downloadElementsAsSeparatePdfsZip(items, `bulletins-${classeObj?.nom || 'classe'}-T${selectedTrimestre}.zip`.replace(/\s+/g, '_'), orientationDe(classeObj));
     } finally {
       setExporting(false);
     }
@@ -1413,6 +1415,7 @@ export const TitulairePage: React.FC = () => {
       accent: classeObj.couleurBulletin || settings.couleurBulletin || '#2563a8',
       fond: classeObj.couleurFondBulletin || settings.couleurFondBulletin || '#ffffff',
       modele: modeleDe(classeObj),
+      orientation: orientationDe(classeObj),
     });
     setCouleurError(null);
     setCouleurModalOpen(true);
@@ -1422,7 +1425,7 @@ export const TitulairePage: React.FC = () => {
     setCouleurSaving(true);
     setCouleurError(null);
     try {
-      const updated = await updateClasseCouleur(classeObj.id, { couleurBulletin: couleurForm.accent, couleurFondBulletin: couleurForm.fond, modeleBulletin: couleurForm.modele });
+      const updated = await updateClasseCouleur(classeObj.id, { couleurBulletin: couleurForm.accent, couleurFondBulletin: couleurForm.fond, modeleBulletin: couleurForm.modele, orientationBulletin: couleurForm.orientation });
       setClasses(prev => prev.map(c => c.id === updated.id ? updated : c));
       setCouleurModalOpen(false);
     } catch (err) {
@@ -1448,11 +1451,10 @@ export const TitulairePage: React.FC = () => {
 
       {viewAllClasse && (
         <div className="modal-overlay bulletin-modal-overlay" onClick={() => setViewAllClasse(false)}>
-          <div className="modal bulletin-modal" onClick={e => e.stopPropagation()} style={{ maxWidth: orientation === 'paysage' ? 1200 : 760 }}>
+          <div className="modal bulletin-modal" onClick={e => e.stopPropagation()} style={{ maxWidth: 760 }}>
             <div className="modal-header no-print">
               <div className="modal-title">Tous les bulletins — {classeObj.nom} ({classeEleves.length})</div>
-              <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
-                <OrientationToggle />
+              <div style={{ display: 'flex', gap: 8 }}>
                 <button className="btn btn-accent btn-sm" onClick={handleDownloadAllPdf} disabled={exporting}><Download size={13} /> {exporting ? 'Génération...' : 'Télécharger (ZIP, un PDF par élève)'}</button>
                 <button className="btn btn-ghost btn-icon btn-sm" onClick={() => setViewAllClasse(false)}><X size={16} /></button>
               </div>
@@ -1472,7 +1474,7 @@ export const TitulairePage: React.FC = () => {
         <div className="modal-overlay" onClick={() => setCouleurModalOpen(false)}>
           <div className="modal" onClick={e => e.stopPropagation()}>
             <div className="modal-header">
-              <div className="modal-title">Modèle et couleur du bulletin — {classeObj.nom}</div>
+              <div className="modal-title">Modèle, format et couleur du bulletin — {classeObj.nom}</div>
               <button className="btn btn-ghost btn-icon btn-sm" onClick={() => setCouleurModalOpen(false)}><X size={16} /></button>
             </div>
             <div className="modal-body">
@@ -1487,6 +1489,12 @@ export const TitulairePage: React.FC = () => {
                   {MODELES_BULLETIN.map(m => <option key={m.key} value={m.key}>{m.label}</option>)}
                 </select>
                 <div style={{ fontSize: 12, color: 'var(--text-muted)', marginTop: 4 }}>{MODELES_BULLETIN.find(m => m.key === couleurForm.modele)?.description}</div>
+              </div>
+              <div className="form-group">
+                <label className="form-label">Format de page (impression / PDF)</label>
+                <select className="form-control" value={couleurForm.orientation} onChange={e => setCouleurForm(f => ({ ...f, orientation: e.target.value as OrientationBulletin }))}>
+                  {ORIENTATIONS_BULLETIN.map(o => <option key={o.key} value={o.key}>{o.label}</option>)}
+                </select>
               </div>
               <div className="form-row">
                 <div className="form-group">
@@ -1605,11 +1613,10 @@ export const TitulairePage: React.FC = () => {
 
       {viewEleve && viewEleveObj && (
         <div className="modal-overlay bulletin-modal-overlay" onClick={() => setViewEleve(null)}>
-          <div className="modal bulletin-modal" onClick={e => e.stopPropagation()} style={{ maxWidth: orientation === 'paysage' ? 1200 : 760 }}>
+          <div className="modal bulletin-modal" onClick={e => e.stopPropagation()} style={{ maxWidth: 760 }}>
             <div className="modal-header no-print">
               <div className="modal-title">Bulletin</div>
-              <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
-                <OrientationToggle />
+              <div style={{ display: 'flex', gap: 8 }}>
                 <button className="btn btn-ghost btn-sm" onClick={() => window.print()}><Printer size={13} /> Imprimer</button>
                 <button className="btn btn-accent btn-sm" onClick={handleDownloadPdf} disabled={exporting}><Download size={13} /> {exporting ? 'Génération...' : 'Télécharger PDF'}</button>
                 <button className="btn btn-ghost btn-icon btn-sm" onClick={() => setViewEleve(null)}><X size={16} /></button>

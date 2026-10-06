@@ -1,10 +1,6 @@
 import jsPDF from 'jspdf';
 import html2canvas from 'html2canvas';
 import JSZip from 'jszip';
-import { getOrientationBulletin } from './orientationBulletin';
-
-/** Orientation de page jsPDF selon le choix portrait / paysage du bulletin. */
-const orientationPdf = () => (getOrientationBulletin() === 'paysage' ? 'landscape' : 'portrait');
 
 /**
  * Capture un élément du DOM et le télécharge directement en PDF A4, une
@@ -12,13 +8,16 @@ const orientationPdf = () => (getOrientationBulletin() === 'paysage' ? 'landscap
  * navigateur. Le contenu est mis à l'échelle pour tenir entièrement sur
  * la page, comme le ferait une impression "ajuster à la page".
  */
-export async function downloadElementAsPdf(element: HTMLElement, filename: string): Promise<void> {
+export type Orientation = 'portrait' | 'paysage';
+const pdfOrientation = (o: Orientation) => (o === 'paysage' ? 'landscape' : 'portrait');
+
+export async function downloadElementAsPdf(element: HTMLElement, filename: string, orientation: Orientation = 'portrait'): Promise<void> {
   const canvas = await html2canvas(element, {
     scale: 2,
     useCORS: true,
     backgroundColor: '#ffffff',
   });
-  const pdf = new jsPDF({ orientation: orientationPdf(), unit: 'mm', format: 'a4' });
+  const pdf = new jsPDF({ orientation: pdfOrientation(orientation), unit: 'mm', format: 'a4' });
   addCanvasAsPage(pdf, canvas);
   pdf.save(filename);
 }
@@ -35,8 +34,8 @@ export async function downloadElementAsPdf(element: HTMLElement, filename: strin
  * élément en pleine vue et on laisse le navigateur stabiliser l'affichage avant
  * de le capturer.
  */
-export async function downloadElementsAsPdf(elements: HTMLElement[], filename: string): Promise<void> {
-  const pdf = new jsPDF({ orientation: orientationPdf(), unit: 'mm', format: 'a4' });
+export async function downloadElementsAsPdf(elements: HTMLElement[], filename: string, orientation: Orientation = 'portrait'): Promise<void> {
+  const pdf = new jsPDF({ orientation: pdfOrientation(orientation), unit: 'mm', format: 'a4' });
   for (let i = 0; i < elements.length; i++) {
     const el = elements[i];
     el.scrollIntoView({ block: 'start' });
@@ -63,7 +62,8 @@ export async function downloadElementsAsPdf(elements: HTMLElement[], filename: s
  */
 export async function downloadElementsAsSeparatePdfsZip(
   items: { element: HTMLElement; filename: string }[],
-  zipFilename: string
+  zipFilename: string,
+  orientation: Orientation = 'portrait'
 ): Promise<void> {
   const zip = new JSZip();
   for (const { element, filename } of items) {
@@ -76,7 +76,7 @@ export async function downloadElementsAsSeparatePdfsZip(
       useCORS: true,
       backgroundColor: '#ffffff',
     });
-    const pdf = new jsPDF({ orientation: orientationPdf(), unit: 'mm', format: 'a4' });
+    const pdf = new jsPDF({ orientation: pdfOrientation(orientation), unit: 'mm', format: 'a4' });
     addCanvasAsPage(pdf, canvas);
     const blob = pdf.output('blob');
     zip.file(filename, blob);

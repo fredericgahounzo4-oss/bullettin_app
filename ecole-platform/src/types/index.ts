@@ -24,6 +24,8 @@ export interface Eleve {
 
 export type ModeleBulletin = 'standard' | 'lycee_semestre' | 'lycee_semestre_2' | 'college_trimestre';
 
+export type OrientationBulletin = 'portrait' | 'paysage';
+
 export interface Classe {
   id: string;
   nom: string;
@@ -37,6 +39,8 @@ export interface Classe {
   couleurFondBulletin?: string;
   /** Modèle d'impression du bulletin de cette classe (défaut : standard). */
   modeleBulletin?: ModeleBulletin;
+  /** Orientation de la page pour l'impression / le PDF (défaut : portrait). */
+  orientationBulletin?: OrientationBulletin;
 }
 
 export interface Matiere {

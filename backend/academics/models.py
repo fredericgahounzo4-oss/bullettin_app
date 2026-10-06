@@ -3,6 +3,11 @@ from django.db import models
 from django.core.validators import MinValueValidator, MaxValueValidator
 
 
+ORIENTATIONS_BULLETIN = [
+    ('portrait', 'Portrait (vertical)'),
+    ('paysage', 'Paysage (horizontal)'),
+]
+
 MODELES_BULLETIN = [
     ('standard', 'Standard (trimestre)'),
     ('lycee_semestre', 'Lycée — Semestre (sections littéraires / scientifiques / facultatives)'),
@@ -25,6 +30,10 @@ class Classe(models.Model):
     couleur_bulletin = models.CharField(
         max_length=7, blank=True, default='',
         help_text="Couleur d'accent du bulletin de cette classe (ex. #2563a8). Vide = couleur par défaut de l'établissement.",
+    )
+    orientation_bulletin = models.CharField(
+        max_length=10, choices=ORIENTATIONS_BULLETIN, default='portrait',
+        help_text="Orientation de la page (portrait ou paysage) pour l'impression / le PDF des bulletins de cette classe.",
     )
     modele_bulletin = models.CharField(
         max_length=30, choices=MODELES_BULLETIN, default='standard',

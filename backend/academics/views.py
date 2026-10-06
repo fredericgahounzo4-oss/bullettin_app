@@ -4,7 +4,7 @@ from rest_framework.decorators import action
 from rest_framework.exceptions import ValidationError
 from rest_framework.response import Response
 
-from .models import Classe, Matiere, Eleve, Note, MODELES_BULLETIN
+from .models import Classe, Matiere, Eleve, Note, MODELES_BULLETIN, ORIENTATIONS_BULLETIN
 from .serializers import ClasseSerializer, MatiereSerializer, EleveSerializer, NoteSerializer
 from .permissions import classes_du_professeur, eleves_du_professeur
 
@@ -69,6 +69,12 @@ class ClasseViewSet(viewsets.ModelViewSet):
                 return Response({'detail': 'Modèle de bulletin inconnu.'}, status=400)
             classe.modele_bulletin = modele
             champs.append('modele_bulletin')
+        if 'orientation_bulletin' in request.data:
+            orientation = request.data.get('orientation_bulletin') or 'portrait'
+            if orientation not in dict(ORIENTATIONS_BULLETIN):
+                return Response({'detail': 'Orientation de bulletin inconnue.'}, status=400)
+            classe.orientation_bulletin = orientation
+            champs.append('orientation_bulletin')
         classe.save(update_fields=champs)
         return Response(ClasseSerializer(classe).data)
 
