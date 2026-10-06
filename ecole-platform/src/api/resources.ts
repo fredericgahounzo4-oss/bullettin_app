@@ -128,3 +128,8 @@ export const setUserActive = async (id: string, isActive: boolean): Promise<User
 
 export const resetUserPassword = async (id: string, password?: string): Promise<string> =>
   (await http.post<{ password: string }>(`/auth/users/${id}/reset_password/`, password ? { password } : {})).password;
+
+/** L'utilisateur connecté change son propre mot de passe (le serveur vérifie l'ancien). */
+export const changeMyPassword = async (oldPassword: string, newPassword: string): Promise<void> => {
+  await http.post('/auth/change-password/', { old_password: oldPassword, new_password: newPassword });
+};

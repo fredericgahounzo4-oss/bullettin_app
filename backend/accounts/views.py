@@ -3,7 +3,7 @@ import string
 from rest_framework import generics, permissions, viewsets, status
 from rest_framework.decorators import action
 from rest_framework.response import Response
-from rest_framework.throttling import AnonRateThrottle
+from rest_framework.throttling import AnonRateThrottle, UserRateThrottle
 from rest_framework_simplejwt.views import TokenObtainPairView
 from .models import User
 from .serializers import UserSerializer, UserCreateSerializer, EmailTokenObtainPairSerializer
@@ -13,6 +13,15 @@ class LoginRateThrottle(AnonRateThrottle):
     """Limite les tentatives de connexion par IP (scope 'login', voir settings.py)
     pour empêcher le brute-force de mots de passe."""
     scope = 'login'
+
+
+class PasswordChangeThrottle(UserRateThrottle):
+    """Limite les essais de changement de mot de passe (empêche de deviner le mot de passe
+    actuel avec une session volée). Scope 'password', voir settings.py."""
+    scope = 'password'
+
+
+MIN_PASSWORD_LENGTH = 6
 
 
 class LoginView(TokenObtainPairView):
@@ -26,6 +35,29 @@ class MeView(generics.RetrieveAPIView):
 
     def get_object(self):
         return self.request.user
+
+
+class ChangePasswordView(generics.GenericAPIView):
+    """POST /api/auth/change-password/ — l'utilisateur connecté change son propre mot de passe
+    (il doit fournir son mot de passe actuel)."""
+    permission_classes = [permissions.IsAuthenticated]
+    throttle_classes = [PasswordChangeThrottle]
+
+    def post(self, request):
+        old = request.data.get('old_password') or ''
+        new = request.data.get('new_password') or ''
+        user = request.user
+        if not old or not user.check_password(old):
+            return Response({'detail': 'Le mot de passe actuel est incorrect.'}, status=status.HTTP_400_BAD_REQUEST)
+        if len(new) < MIN_PASSWORD_LENGTH:
+            return Response({'detail': f'Le nouveau mot de passe doit contenir au moins {MIN_PASSWORD_LENGTH} caractères.'},
+                            status=status.HTTP_400_BAD_REQUEST)
+        if new == old:
+            return Response({'detail': "Le nouveau mot de passe doit être différent de l'actuel."},
+                            status=status.HTTP_400_BAD_REQUEST)
+        user.set_password(new)
+        user.save(update_fields=['password'])
+        return Response({'detail': 'Mot de passe modifié.'})
 
 
 def generate_password(length=10):
@@ -115,6 +147,9 @@ class UserViewSet(viewsets.ModelViewSet):
     def reset_password(self, request, pk=None):
         user = self.get_object()
         new_password = request.data.get('password') or generate_password()
+        if len(new_password) < MIN_PASSWORD_LENGTH:
+            return Response({'detail': f'Le mot de passe doit contenir au moins {MIN_PASSWORD_LENGTH} caractères.'},
+                            status=status.HTTP_400_BAD_REQUEST)
         user.set_password(new_password)
         user.save()
         return Response({'password': new_password})

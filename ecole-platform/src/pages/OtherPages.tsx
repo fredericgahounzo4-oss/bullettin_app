@@ -9,7 +9,7 @@ import { peutChangerOrientation, changerOrientationClasse } from '../utils/orien
 import { downloadElementAsPdf, downloadElementsAsSeparatePdfsZip } from '../utils/pdfExport';
 import {
   fetchClasses, fetchMatieres, fetchEleves, fetchNotes,
-  fetchUsersByRole, createClasse, updateClasse, deleteClasse, updateClasseCouleur, createMatiere, updateMatiere, deleteMatiere,
+  fetchUsersByRole, createClasse, updateClasse, deleteClasse, updateClasseCouleur, createMatiere, updateMatiere, deleteMatiere, changeMyPassword,
 } from '../api/resources';
 import { errorMessage } from '../api/client';
 import { mentionFor } from '../utils/mentions';
@@ -1039,14 +1039,24 @@ export const SettingsPage: React.FC = () => {
     setTimeout(() => setSaved(false), 2500);
   };
 
-  const handleChangePwd = () => {
+  const [pwdBusy, setPwdBusy] = useState(false);
+  const handleChangePwd = async () => {
     if (!pwd.actuel || pwd.nouveau.length < 6 || pwd.nouveau !== pwd.confirmer) {
       setPwdMsg({ ok: false, text: t('settings.erreurMotDePasse') });
       return;
     }
-    setPwdMsg({ ok: true, text: t('settings.motDePasseChange') });
-    setPwd({ actuel: '', nouveau: '', confirmer: '' });
-    setTimeout(() => setPwdMsg(null), 3000);
+    setPwdBusy(true);
+    try {
+      await changeMyPassword(pwd.actuel, pwd.nouveau);
+      setPwdMsg({ ok: true, text: t('settings.motDePasseChange') });
+      setPwd({ actuel: '', nouveau: '', confirmer: '' });
+      setTimeout(() => setPwdMsg(null), 4000);
+    } catch (err) {
+      // ex. « Le mot de passe actuel est incorrect. » : le message vient du serveur
+      setPwdMsg({ ok: false, text: errorMessage(err) });
+    } finally {
+      setPwdBusy(false);
+    }
   };
 
   return (
@@ -1222,7 +1232,7 @@ export const SettingsPage: React.FC = () => {
                   </div>
                 )}
                 <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
-                  <button className="btn btn-primary" onClick={handleChangePwd}>{t('settings.changerMotDePasse')}</button>
+                  <button className="btn btn-primary" onClick={handleChangePwd} disabled={pwdBusy}>{t('settings.changerMotDePasse')}</button>
                 </div>
               </div>
             </div>
