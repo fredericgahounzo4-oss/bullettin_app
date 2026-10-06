@@ -1,16 +1,20 @@
 import React from 'react';
-import { useOrientationBulletin, setOrientationBulletin } from '../utils/orientationBulletin';
+import { OrientationBulletin } from '../types';
 
-/** Bascule Portrait / Paysage pour l'aperçu, l'impression et le PDF du bulletin. */
-export const OrientationToggle: React.FC = () => {
-  const o = useOrientationBulletin();
-  const bouton = (val: 'portrait' | 'paysage', label: string, w: number, h: number) => (
+/** Bascule Portrait / Paysage, placée en haut de l'aperçu du bulletin, à côté de « Imprimer ». */
+export const OrientationToggle: React.FC<{
+  value: OrientationBulletin;
+  onChange: (o: OrientationBulletin) => void;
+  disabled?: boolean;
+}> = ({ value, onChange, disabled }) => {
+  const bouton = (val: OrientationBulletin, label: string, w: number, h: number) => (
     <button
       type="button"
-      className={`btn btn-sm ${o === val ? 'btn-accent' : 'btn-ghost'}`}
-      onClick={() => setOrientationBulletin(val)}
-      aria-pressed={o === val}
-      title={`Format ${label.toLowerCase()}`}
+      className={`btn btn-sm ${value === val ? 'btn-accent' : 'btn-ghost'}`}
+      onClick={() => onChange(val)}
+      disabled={disabled}
+      aria-pressed={value === val}
+      title={disabled ? "Seul le professeur titulaire ou l'administrateur peut changer le format" : `Format ${label.toLowerCase()}`}
     >
       <span style={{ width: w, height: h, border: '1.5px solid currentColor', borderRadius: 2, display: 'inline-block' }} />
       {label}

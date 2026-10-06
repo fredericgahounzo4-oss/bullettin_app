@@ -4,6 +4,8 @@ import { Check, X, Download, Users, TrendingUp, BookOpen, CheckCircle, Lock, Pal
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, LineChart, Line, Legend, RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis, Radar } from 'recharts';
 import { useSettings } from '../context/SettingsContext';
 import { useAuth } from '../context/AuthContext';
+import { OrientationToggle } from '../components/OrientationToggle';
+import { peutChangerOrientation, changerOrientationClasse } from '../utils/orientationClasse';
 import { downloadElementAsPdf, downloadElementsAsSeparatePdfsZip } from '../utils/pdfExport';
 import {
   fetchClasses, fetchMatieres, fetchEleves, fetchNotes,
@@ -735,6 +737,7 @@ export const BulletinPreview: React.FC<{ eleve: Eleve; classes: Classe[]; matier
 // ===== GESTION DES BULLETINS =====
 
 export const BulletinsPage: React.FC = () => {
+  const { user } = useAuth();
   const [classes, setClasses] = useState<Classe[]>([]);
   const [matieres, setMatieres] = useState<Matiere[]>([]);
   const [eleves, setEleves] = useState<Eleve[]>([]);
@@ -901,10 +904,11 @@ export const BulletinsPage: React.FC = () => {
       {/* Aperçu du bulletin sélectionné */}
       {viewEleve && viewEleveObj && (
         <div className="modal-overlay bulletin-modal-overlay" onClick={() => setViewEleve(null)}>
-          <div className="modal bulletin-modal" onClick={e => e.stopPropagation()} style={{ maxWidth: 760 }}>
+          <div className="modal bulletin-modal" onClick={e => e.stopPropagation()} style={{ maxWidth: orientationDe(classeObj) === 'paysage' ? 1280 : 760 }}>
             <div className="modal-header no-print">
               <div className="modal-title">Aperçu du bulletin</div>
-              <div style={{ display: 'flex', gap: 8 }}>
+              <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', alignItems: 'center' }}>
+                <OrientationToggle value={orientationDe(classeObj)} disabled={!peutChangerOrientation(user, classeObj)} onChange={o => classeObj && changerOrientationClasse(classeObj, o, setClasses)} />
                 <button className="btn btn-ghost btn-sm" onClick={() => window.print()}><Printer size={13} /> Imprimer</button>
                 <button className="btn btn-accent btn-sm" onClick={handleDownloadPdf} disabled={exporting}><Download size={13} /> {exporting ? 'Génération...' : 'Télécharger PDF'}</button>
                 <button className="btn btn-ghost btn-icon btn-sm" onClick={() => setViewEleve(null)}><X size={16} /></button>
@@ -922,10 +926,11 @@ export const BulletinsPage: React.FC = () => {
       {/* Tous les bulletins de la classe, un par page dans un seul PDF */}
       {viewAllClasse && (
         <div className="modal-overlay bulletin-modal-overlay" onClick={() => setViewAllClasse(false)}>
-          <div className="modal bulletin-modal" onClick={e => e.stopPropagation()} style={{ maxWidth: 760 }}>
+          <div className="modal bulletin-modal" onClick={e => e.stopPropagation()} style={{ maxWidth: orientationDe(classeObj) === 'paysage' ? 1280 : 760 }}>
             <div className="modal-header no-print">
               <div className="modal-title">Tous les bulletins — {classeObj?.nom} ({classeEleves.length})</div>
-              <div style={{ display: 'flex', gap: 8 }}>
+              <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', alignItems: 'center' }}>
+                <OrientationToggle value={orientationDe(classeObj)} disabled={!peutChangerOrientation(user, classeObj)} onChange={o => classeObj && changerOrientationClasse(classeObj, o, setClasses)} />
                 <button className="btn btn-accent btn-sm" onClick={handleDownloadAllPdf} disabled={exporting}><Download size={13} /> {exporting ? 'Génération...' : 'Télécharger (ZIP, un PDF par élève)'}</button>
                 <button className="btn btn-ghost btn-icon btn-sm" onClick={() => setViewAllClasse(false)}><X size={16} /></button>
               </div>
@@ -1451,10 +1456,11 @@ export const TitulairePage: React.FC = () => {
 
       {viewAllClasse && (
         <div className="modal-overlay bulletin-modal-overlay" onClick={() => setViewAllClasse(false)}>
-          <div className="modal bulletin-modal" onClick={e => e.stopPropagation()} style={{ maxWidth: 760 }}>
+          <div className="modal bulletin-modal" onClick={e => e.stopPropagation()} style={{ maxWidth: orientationDe(classeObj) === 'paysage' ? 1280 : 760 }}>
             <div className="modal-header no-print">
               <div className="modal-title">Tous les bulletins — {classeObj.nom} ({classeEleves.length})</div>
-              <div style={{ display: 'flex', gap: 8 }}>
+              <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', alignItems: 'center' }}>
+                <OrientationToggle value={orientationDe(classeObj)} disabled={!peutChangerOrientation(user, classeObj)} onChange={o => classeObj && changerOrientationClasse(classeObj, o, setClasses)} />
                 <button className="btn btn-accent btn-sm" onClick={handleDownloadAllPdf} disabled={exporting}><Download size={13} /> {exporting ? 'Génération...' : 'Télécharger (ZIP, un PDF par élève)'}</button>
                 <button className="btn btn-ghost btn-icon btn-sm" onClick={() => setViewAllClasse(false)}><X size={16} /></button>
               </div>
@@ -1613,10 +1619,11 @@ export const TitulairePage: React.FC = () => {
 
       {viewEleve && viewEleveObj && (
         <div className="modal-overlay bulletin-modal-overlay" onClick={() => setViewEleve(null)}>
-          <div className="modal bulletin-modal" onClick={e => e.stopPropagation()} style={{ maxWidth: 760 }}>
+          <div className="modal bulletin-modal" onClick={e => e.stopPropagation()} style={{ maxWidth: orientationDe(classeObj) === 'paysage' ? 1280 : 760 }}>
             <div className="modal-header no-print">
               <div className="modal-title">Bulletin</div>
-              <div style={{ display: 'flex', gap: 8 }}>
+              <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', alignItems: 'center' }}>
+                <OrientationToggle value={orientationDe(classeObj)} disabled={!peutChangerOrientation(user, classeObj)} onChange={o => classeObj && changerOrientationClasse(classeObj, o, setClasses)} />
                 <button className="btn btn-ghost btn-sm" onClick={() => window.print()}><Printer size={13} /> Imprimer</button>
                 <button className="btn btn-accent btn-sm" onClick={handleDownloadPdf} disabled={exporting}><Download size={13} /> {exporting ? 'Génération...' : 'Télécharger PDF'}</button>
                 <button className="btn btn-ghost btn-icon btn-sm" onClick={() => setViewEleve(null)}><X size={16} /></button>
