@@ -90,6 +90,7 @@ input, select, textarea {
 .main-content {
   margin-left: var(--sidebar-w);
   flex: 1;
+  min-width: 0; /* sans ça, un tableau large élargit toute la page (et décale les fenêtres sur téléphone) */
   display: flex;
   flex-direction: column;
   min-height: 100vh;

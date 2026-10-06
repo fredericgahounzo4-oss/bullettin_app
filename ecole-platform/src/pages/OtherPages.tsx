@@ -1444,7 +1444,7 @@ export const TitulairePage: React.FC = () => {
     <div>
       <div className="page-header">
         <div><div className="page-title">Classe titulaire — {classeObj.nom}</div><div className="page-subtitle">Vue complète : toutes les matières, tous les élèves</div></div>
-        <div style={{ display: 'flex', gap: 8 }}>
+        <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginTop: 8 }}>
           <button className="btn btn-ghost" onClick={() => setViewAllClasse(true)}>
             <Download size={14} /> Télécharger tous les bulletins
           </button>
