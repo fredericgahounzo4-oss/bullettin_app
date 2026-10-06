@@ -1,6 +1,7 @@
 import React from 'react';
 import { Matiere, User } from '../types';
 import { useSettings } from '../context/SettingsContext';
+import { useOrientationBulletin } from '../utils/orientationBulletin';
 
 // ============================================================================
 // Modèles de bulletin (adaptés des bulletins papier) — rendu uniquement.
@@ -98,12 +99,19 @@ const accentLisible = (d: { accent: string; couleurFond?: string }) =>
   contraste(d.accent, d.couleurFond || '#ffffff') >= 3 ? d.accent : texteSur(d.couleurFond || '#ffffff');
 
 const Cadre: React.FC<{ d: BulletinData; children: React.ReactNode }> = ({ d, children }) => {
+<<<<<<< HEAD
   const paysage = d.orientation === 'paysage';
   return (
     <div className="bulletin-scroll-wrap" style={{ overflowX: 'auto', WebkitOverflowScrolling: 'touch', maxWidth: '100%' }}>
       {/* Format de page pour « Imprimer » (le PDF utilise la même orientation) */}
       <style>{`@page { size: A4 ${paysage ? 'landscape' : 'portrait'}; margin: 8mm; }`}</style>
       <div className="card bulletin-print" style={{ padding: '14px 18px', maxWidth: paysage ? 1240 : 920, minWidth: paysage ? 900 : 680, margin: '0 auto', fontSize: paysage ? 11 : 10, background: d.couleurFond, color: texteSur(d.couleurFond || '#ffffff') }}>
+=======
+  const paysage = useOrientationBulletin() === 'paysage';
+  return (
+    <div className="bulletin-scroll-wrap" style={{ overflowX: 'auto', WebkitOverflowScrolling: 'touch', maxWidth: '100%' }}>
+      <div className="card bulletin-print" style={{ padding: '14px 18px', maxWidth: paysage ? 1123 : 920, minWidth: paysage ? 900 : 680, margin: '0 auto', fontSize: 10, background: d.couleurFond, color: '#0f172a' }}>
+>>>>>>> bfac3cc (mise à jour et amélioration bulletin)
         {children}
       </div>
     </div>
@@ -151,6 +159,7 @@ const th = (d: BulletinData, extra?: React.CSSProperties): React.CSSProperties =
 });
 const td = (extra?: React.CSSProperties): React.CSSProperties => ({ padding: '3px 4px', border: BORD, textAlign: 'center', ...extra });
 
+<<<<<<< HEAD
 /** Couleur d'une note : vert / orange / rouge si elle reste lisible sur le fond de la classe, sinon noir ou blanc (en gras). */
 const couleurNote = (v: number | null, fond?: string) => {
   const f = fond || '#ffffff';
@@ -158,6 +167,21 @@ const couleurNote = (v: number | null, fond?: string) => {
   if (v === null) return base;
   const voulue = v >= 14 ? '#15803d' : v >= 10 ? '#b45309' : '#b91c1c';
   return contraste(voulue, f) >= 4.5 ? voulue : base;
+=======
+// Couleurs « note haute / moyenne / basse », assez foncées pour se lire sur fond clair.
+const COULEUR_NOTE = { haute: '#15803d', moyenne: '#b45309', basse: '#b91c1c' };
+
+/**
+ * Style d'une note colorée (vert / orange / rouge). Si la couleur se lit mal sur le fond de la classe
+ * (ex. orange sur fond rouge), la cellule passe sur fond blanc pour que la note reste toujours visible.
+ */
+const noteStyle = (v: number | null, d: { couleurFond?: string }): React.CSSProperties => {
+  const fond = d.couleurFond || '#ffffff';
+  if (v === null) return { color: texteSur(fond) };
+  const c = v >= 14 ? COULEUR_NOTE.haute : v >= 10 ? COULEUR_NOTE.moyenne : COULEUR_NOTE.basse;
+  if (contraste(c, fond) >= 4.5) return { color: c, fontWeight: 800 };
+  return { color: c, background: '#ffffff', fontWeight: 800 };
+>>>>>>> bfac3cc (mise à jour et amélioration bulletin)
 };
 
 const Ligne: React.FC<{ label: string; value?: React.ReactNode; gras?: boolean }> = ({ label, value, gras }) => (
@@ -203,7 +227,11 @@ export const BulletinLyceeSemestre: React.FC<{ d: BulletinData }> = ({ d }) => {
         <td style={td()}>{fmt(l.moyDevoir)}</td>
         <td style={td()}>{fmt(l.moyClasse)}</td>
         <td style={td()}>{fmt(l.moyComp)}</td>
+<<<<<<< HEAD
         <td style={td({ fontWeight: 700, color: couleurNote(l.moyDes2, d.couleurFond) })}>{fmt(l.moyDes2)}</td>
+=======
+        <td style={td({ fontWeight: 700, ...noteStyle(l.moyDes2, d) })}>{fmt(l.moyDes2)}</td>
+>>>>>>> bfac3cc (mise à jour et amélioration bulletin)
         <td style={td()}>{l.matiere.coefficient}</td>
         <td style={td({ fontWeight: 600 })}>{l.moyDes2 !== null ? (l.moyDes2 * l.matiere.coefficient).toFixed(2) : '—'}</td>
         <td style={td({ fontSize: 9 })}>{rangMatiere(l)} — {d.appreciation(l.moyDes2)}</td>
@@ -462,7 +490,11 @@ export const BulletinCollege: React.FC<{ d: BulletinData }> = ({ d }) => {
                 <td style={td()}>{fmt(l.moyDevoir)}</td>
                 <td style={td()}>{fmt(l.moyClasse)}</td>
                 <td style={td()}>{fmt(l.moyComp)}</td>
+<<<<<<< HEAD
                 <td style={td({ fontWeight: 700, color: couleurNote(l.moyDes2, d.couleurFond) })}>{fmt(l.moyDes2)}</td>
+=======
+                <td style={td({ fontWeight: 700, ...noteStyle(l.moyDes2, d) })}>{fmt(l.moyDes2)}</td>
+>>>>>>> bfac3cc (mise à jour et amélioration bulletin)
                 <td style={td()}>{rangMatiere(l)}</td>
                 <td style={td({ fontSize: 9 })}>{d.appreciation(l.moyDes2)}</td>
                 <td style={td({ fontSize: 9, textAlign: 'left' })}>{profNom(l)}</td>
@@ -561,6 +593,19 @@ const Pointille: React.FC<{ label: string; haut?: number }> = ({ label, haut = 1
   </div>
 );
 
+const SERIF = "'Times New Roman', Georgia, serif";
+
+/** « 2025-2026 » -> ['25', '26'] pour remplir « 20__ / 20__ » comme sur le papier. */
+const anneeParts = (a: string): [string, string] | null => {
+  const m = a.match(/(\d{2})(\d{2})\D+(\d{2})(\d{2})/);
+  return m ? [m[2], m[4]] : null;
+};
+
+/** Champ souligné à remplir (Classe, Effectif, Nom...). */
+const Champ: React.FC<{ children?: React.ReactNode; w?: number; grow?: boolean; left?: boolean }> = ({ children, w, grow, left }) => (
+  <span style={{ display: 'inline-block', borderBottom: '1px solid #0f172a', minWidth: w, flex: grow ? 1 : undefined, textAlign: left ? 'left' : 'center', fontWeight: 800, padding: '0 4px', minHeight: 14, lineHeight: 1.25 }}>{children}</span>
+);
+
 export const BulletinStandard: React.FC<{ d: BulletinData }> = ({ d }) => {
   const s = d.settings;
   const lignesCompteesPrincipales = d.lignes.filter(l => l.moyDes2 !== null && l.matiere.compteDansMoyenne !== false);
@@ -569,6 +614,8 @@ export const BulletinStandard: React.FC<{ d: BulletinData }> = ({ d }) => {
   const cur = d.stats[d.periode];
   const periodes = Array.from({ length: d.nbPeriodes }, (_, i) => i + 1);
   const trimNom = (p: number) => (p === 1 ? '1er' : `${p}e`);
+  const paysage = useOrientationBulletin() === 'paysage';
+  const annee = anneeParts(s.anneeScolaire);
 
   const ligne = (label: string, l: LigneBulletin | null, key: string) => (
     <tr key={key}>
@@ -577,7 +624,11 @@ export const BulletinStandard: React.FC<{ d: BulletinData }> = ({ d }) => {
       <td style={td()}>{fmt(l?.moyDevoir)}</td>
       <td style={td({ opacity: 0.85 })}>{fmt(l?.moyClasse)}</td>
       <td style={td()}>{fmt(l?.moyComp)}</td>
+<<<<<<< HEAD
       <td style={td({ fontWeight: 700, color: couleurNote(l?.moyDes2 ?? null, d.couleurFond) })}>{fmt(l?.moyDes2)}</td>
+=======
+      <td style={td({ fontWeight: 700, ...noteStyle(l?.moyDes2 ?? null, d) })}>{fmt(l?.moyDes2)}</td>
+>>>>>>> bfac3cc (mise à jour et amélioration bulletin)
       <td style={td()}>{l ? l.matiere.coefficient : '—'}</td>
       <td style={td()}>{l && l.moyDes2 !== null ? (l.moyDes2 * l.matiere.coefficient).toFixed(2) : '—'}</td>
       <td style={td()}>{rangMatiere(l)}</td>
@@ -591,6 +642,7 @@ export const BulletinStandard: React.FC<{ d: BulletinData }> = ({ d }) => {
 
   return (
     <Cadre d={d}>
+<<<<<<< HEAD
       {/* En-tête, comme sur le bulletin papier : logo + bloc centré à gauche, titre au centre, République à droite */}
       <div style={{ display: 'grid', gridTemplateColumns: '1.7fr 1.25fr 1fr', gap: 10, alignItems: 'center' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
@@ -635,6 +687,59 @@ export const BulletinStandard: React.FC<{ d: BulletinData }> = ({ d }) => {
           <span style={{ flex: 1, borderBottom: '1px solid currentColor', fontWeight: 700, padding: '0 6px' }}>{d.eleve.nom} {d.eleve.prenom}</span>
         </div>
         <div>N°MLE <Trait large={90}>{'\u00a0'}</Trait></div>
+=======
+      {/* En-tête, positionné comme sur le bulletin papier : logo + école à gauche, République + titre à droite */}
+      <div style={{ display: 'grid', gridTemplateColumns: s.logoUrl ? 'auto 1.25fr 1fr' : '1.25fr 1fr', gap: 12, alignItems: 'start', paddingBottom: 6, marginBottom: 6, borderBottom: `2px solid ${accentLisible(d)}` }}>
+        {s.logoUrl ? (
+          <img src={s.logoUrl} alt="Logo" style={{ width: 80, height: 80, borderRadius: '50%', objectFit: 'cover', alignSelf: 'center', border: `2px solid ${accentLisible(d)}` }} />
+        ) : null}
+        <div style={{ textAlign: 'center' }}>
+          <div style={{ fontSize: 9.5, fontWeight: 700, textTransform: 'uppercase', lineHeight: 1.35, maxWidth: 230, margin: '0 auto' }}>{s.ministere}</div>
+          <div style={{ fontFamily: SERIF, fontSize: 17, fontWeight: 700, lineHeight: 1.12, marginTop: 8, color: accentLisible(d) }}>{s.nomEcole}</div>
+          <div style={{ display: 'inline-block', textAlign: 'left', fontSize: 10, fontWeight: 700, lineHeight: 1.4, marginTop: 6 }}>
+            <div>B.P: {s.bp} {s.ville}-{s.pays}</div>
+            <div>Tél : {s.telephone1}</div>
+            {s.telephone2 ? <div style={{ paddingLeft: 24 }}>{s.telephone2}</div> : null}
+          </div>
+        </div>
+        <div>
+          <div style={{ textAlign: 'center', marginLeft: 'auto', width: 'fit-content', lineHeight: 1.3 }}>
+            <div style={{ fontSize: 10.5, fontWeight: 700, textTransform: 'uppercase' }}>{s.republique}</div>
+            <div style={{ fontSize: 8.5, fontWeight: 600, textTransform: 'uppercase' }}>{s.deviseNationale}</div>
+          </div>
+          <div style={{ fontFamily: SERIF, fontSize: 16, fontWeight: 800, marginTop: 12 }}>BULLETIN DE NOTES N° ....</div>
+          <div style={{ fontSize: 11, marginTop: 6, paddingLeft: 22, display: 'flex', alignItems: 'flex-end', gap: 4 }}>
+            <span>DU</span>
+            <span style={{ borderBottom: '1px dotted #0f172a', minWidth: 90, textAlign: 'center', fontWeight: 800 }}>{d.periode === 1 ? '1er' : `${d.periode}e`}</span>
+            <span>Trimestre</span>
+          </div>
+          <div style={{ display: 'flex', justifyContent: 'space-between', gap: 10, fontSize: 10.5, fontWeight: 700, marginTop: 10 }}>
+            <span style={{ display: 'flex', alignItems: 'center', gap: 5 }}>Doublant <span style={{ width: 34, height: 17, border: '1px solid #0f172a', display: 'inline-block' }} /></span>
+            <span style={{ display: 'flex', alignItems: 'center', gap: 5 }}>Nouveau <span style={{ width: 34, height: 17, border: '1px solid #0f172a', display: 'inline-block' }} /></span>
+          </div>
+        </div>
+      </div>
+
+      {/* Année scolaire / Classe / Effectif, puis Nom et prénoms / N°MLE : lignes à remplir comme sur le papier */}
+      <div style={{ display: 'grid', gridTemplateColumns: 'auto 1fr 1fr', gap: 14, fontSize: 10.5, fontWeight: 600, marginBottom: 6, alignItems: 'flex-end' }}>
+        <div style={{ display: 'flex', alignItems: 'flex-end', gap: 4 }}>
+          <span>Année scolaire</span>
+          {annee ? (
+            <>20<Champ w={34}>{annee[0]}</Champ> / 20<Champ w={34}>{annee[1]}</Champ></>
+          ) : (
+            <Champ w={90}>{s.anneeScolaire}</Champ>
+          )}
+        </div>
+        <div style={{ display: 'flex', alignItems: 'flex-end', gap: 4 }}><span>Classe</span><Champ grow>{d.eleve.classe}</Champ></div>
+        <div style={{ display: 'flex', alignItems: 'flex-end', gap: 4 }}><span>Effectif</span><Champ grow>{d.effectif}</Champ></div>
+      </div>
+      <div style={{ display: 'flex', alignItems: 'flex-end', gap: 14, fontSize: 10.5, fontWeight: 700, marginBottom: 8 }}>
+        <div style={{ display: 'flex', alignItems: 'flex-end', gap: 4, flex: 1 }}>
+          <span style={{ whiteSpace: 'nowrap' }}>NOM ET PRÉNOMS DE L'ÉLÈVE :</span>
+          <Champ grow left>{d.eleve.nom} {d.eleve.prenom}</Champ>
+        </div>
+        <div style={{ display: 'flex', alignItems: 'flex-end', gap: 4, width: 190 }}><span style={{ whiteSpace: 'nowrap' }}>N°MLE</span><Champ grow> </Champ></div>
+>>>>>>> bfac3cc (mise à jour et amélioration bulletin)
       </div>
 
       {/* Tableau principal */}
@@ -673,6 +778,109 @@ export const BulletinStandard: React.FC<{ d: BulletinData }> = ({ d }) => {
         </table>
       </div>
 
+      {paysage ? (
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1.8fr', gap: 8, marginTop: 6, fontSize: 10, alignItems: 'start' }}>
+        <table style={{ width: '100%', borderCollapse: 'collapse', alignSelf: 'start' }}>
+          <tbody>
+            {([
+              ['MAJORATION :', '', true],
+              ['TOTAL DES POINTS :', d.totalProduit ? <>{d.totalProduit.toFixed(2)} <span style={{ fontWeight: 400, fontSize: 8 }}>(coef {d.totalCoeff})</span></> : '—', true],
+              ['Moyenne du Trimestre', ok ? <>{fmt(d.moyenneGenerale)} /20 <span style={{ fontWeight: 400, fontSize: 8 }}>({d.mention})</span></> : '—'],
+              ['Classement du Trimestre', rangTxt(cur)],
+              ['Moyenne annuelle', d.annuel ? `${fmt(d.annuel.moy)} /20` : ''],
+              ['Classement annuel', d.annuel ? rangTxt(d.annuel) : ''],
+            ] as [string, React.ReactNode, boolean?][]).map(([label, val, gras]) => (
+              <tr key={label}>
+                <td style={td({ textAlign: 'left', fontWeight: gras ? 800 : 600, width: '55%' })}>{label}</td>
+                <td style={td({ fontWeight: 700 })}>{val}</td>
+              </tr>
+            ))}
+            {/* Ajouts demandés : moyennes des trimestres, plus forte, plus faible, moyenne de la classe */}
+            <tr style={{ background: d.accentPale }}>
+              <td colSpan={2} style={td({ textAlign: 'left', fontWeight: 800, fontSize: 9 })}>MOYENNES</td>
+            </tr>
+            {periodes.map(p => (
+              <tr key={'t' + p}>
+                <td style={td({ textAlign: 'left', fontWeight: 600 })}>Moy. du {trimNom(p)} Trim.</td>
+                <td style={td({ fontWeight: 700 })}>
+                  {p <= d.periode && d.stats[p]?.moy !== null && d.stats[p]?.moy !== undefined
+                    ? <>{fmt(d.stats[p].moy)} /20 <span style={{ fontWeight: 400, fontSize: 8 }}>({d.stats[p].rang ? `${ord(d.stats[p].rang as number)} / ${d.stats[p].total}` : '—'})</span></>
+                    : ''}
+                </td>
+              </tr>
+            ))}
+            {([
+              ['Moy. la plus forte', cur?.maxi],
+              ['Moy. la plus faible', cur?.mini],
+              ['Moy. de la classe', cur?.moyClasse],
+            ] as [string, number | null | undefined][]).map(([label, v]) => (
+              <tr key={label}>
+                <td style={td({ textAlign: 'left', fontWeight: 600 })}>{label}</td>
+                <td style={td({ fontWeight: 700 })}>{v !== null && v !== undefined ? `${fmt(v)} /20` : ''}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+        <div style={{ display: 'flex', flexDirection: 'column', justifyContent: 'space-between', gap: 6 }}>
+          <div>
+            <div>Observation du Titulaire :</div>
+            {[0, 1].map(i => <div key={i} style={{ borderBottom: '1px dotted #0f172a', height: 20 }} />)}
+          </div>
+          <div>
+            <div>Moyenne Annuelle en toutes lettres :</div>
+            {[0, 1].map(i => <div key={i} style={{ borderBottom: '1px dotted #0f172a', height: 20 }} />)}
+          </div>
+          <div>
+            <div>Décision et Observation du Conseil :</div>
+            {[0, 1].map(i => <div key={i} style={{ borderBottom: '1px dotted #0f172a', height: 20 }} />)}
+          </div>
+        </div>
+          <div style={{ border: BORD }}>
+            <div style={{ padding: '6px 8px', borderBottom: BORD }}>
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
+            <Pointille label="Assiduité" />
+            <Pointille label="Conduite" />
+            <Pointille label="Travail" />
+            <Pointille label="Nbre de Retenues" />
+            <Pointille label="Nbre d'absence" />
+          </div>
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10, marginTop: 8 }}>
+            <div>
+              <CaseACocher label="Th + Félicitations" />
+              <CaseACocher label="Th + Encouragement" />
+              <CaseACocher label="Tableau d'honneur" />
+              <CaseACocher label="Avertissement pour le travail" />
+              <CaseACocher label="Blâme pour le travail" />
+            </div>
+            <div>
+              <div style={{ fontWeight: 800, textDecoration: 'underline', marginBottom: 2 }}>RÉSULTAT</div>
+              <CaseACocher label="Satisfaisant" />
+              <CaseACocher label="Tout juste moyen" />
+              <CaseACocher label="Médiocre, Nul" />
+              <CaseACocher label="Très faible" />
+              <CaseACocher label="Ne fait aucun effort" />
+            </div>
+          </div>
+            </div>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr' }}>
+              <div style={{ padding: '6px 8px', borderRight: BORD }}>
+          <Pointille label="Passe en" haut={22} />
+          <Pointille label="Double la" haut={22} />
+          <div style={{ marginTop: 10 }}>
+            <div>Exclu pour</div>
+            <CaseACocher label={<i>Insuffisance de travail</i>} />
+            <CaseACocher label={<i>Discipline</i>} />
+          </div>
+              </div>
+              <div style={{ padding: '6px 8px', textAlign: 'center' }}>
+          <div style={{ fontWeight: 800 }}>LE DIRECTEUR GÉNÉRAL</div>
+          <div style={{ height: 70 }} />
+              </div>
+            </div>
+          </div>
+        </div>
+      ) : (
+        <>
       {/* Résumé (à gauche) + observations (à droite), comme sur le papier */}
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1.15fr', gap: 8, marginTop: 6, fontSize: 10 }}>
         <table style={{ width: '100%', borderCollapse: 'collapse', alignSelf: 'start' }}>
@@ -775,6 +983,8 @@ export const BulletinStandard: React.FC<{ d: BulletinData }> = ({ d }) => {
           <div style={{ height: 70 }} />
         </div>
       </div>
+        </>
+      )}
     </Cadre>
   );
 };
