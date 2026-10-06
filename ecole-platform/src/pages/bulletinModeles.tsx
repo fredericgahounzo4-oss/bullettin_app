@@ -102,8 +102,10 @@ const Cadre: React.FC<{ d: BulletinData; children: React.ReactNode }> = ({ d, ch
   return (
     <div className="bulletin-scroll-wrap" style={{ overflowX: 'auto', WebkitOverflowScrolling: 'touch', maxWidth: '100%' }}>
       {/* Format de page pour « Imprimer » (le PDF utilise la même orientation) */}
-      <style>{`@page { size: A4 ${paysage ? 'landscape' : 'portrait'}; margin: 8mm; }`}</style>
-      <div className="card bulletin-print" style={{ padding: '14px 18px', maxWidth: paysage ? 1240 : 920, minWidth: paysage ? 900 : 680, margin: '0 auto', fontSize: paysage ? 11 : 10, background: d.couleurFond, color: texteSur(d.couleurFond || '#ffffff') }}>
+      <style>{`@page { size: A4 ${paysage ? 'landscape' : 'portrait'}; margin: 8mm; }
+.bulletin-paysage th { font-size: 11.5px !important; line-height: 1.25; padding: 7px 6px !important; }
+.bulletin-paysage td { font-size: 11.5px !important; padding: 5px 6px !important; }`}</style>
+      <div className={`card bulletin-print${paysage ? ' bulletin-paysage' : ''}`} style={{ padding: '14px 18px', maxWidth: paysage ? 1240 : 920, minWidth: paysage ? 900 : 680, margin: '0 auto', fontSize: paysage ? 11 : 10, background: d.couleurFond, color: texteSur(d.couleurFond || '#ffffff') }}>
         {children}
       </div>
     </div>
