@@ -149,7 +149,7 @@ const EnTete: React.FC<{ d: BulletinData; titre: string; sousTitre: string }> = 
 };
 
 const th = (d: BulletinData, extra?: React.CSSProperties): React.CSSProperties => ({
-  padding: '3px 4px', fontSize: 8, textAlign: 'center', border: BORD, background: d.accent, color: texteSur(d.accent), verticalAlign: 'middle', ...extra,
+  padding: '5px 3px', fontSize: 10, fontWeight: 700, lineHeight: 1.2, textAlign: 'center', border: BORD, background: d.accent, color: texteSur(d.accent), verticalAlign: 'middle', ...extra,
 });
 const td = (extra?: React.CSSProperties): React.CSSProperties => ({ padding: '3px 4px', border: BORD, textAlign: 'center', ...extra });
 
