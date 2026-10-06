@@ -104,7 +104,15 @@ const Cadre: React.FC<{ d: BulletinData; children: React.ReactNode }> = ({ d, ch
       {/* Format de page pour « Imprimer » (le PDF utilise la même orientation) */}
       <style>{`@page { size: A4 ${paysage ? 'landscape' : 'portrait'}; margin: 8mm; }
 .bulletin-paysage th { font-size: 11.5px !important; line-height: 1.25; padding: 7px 6px !important; }
-.bulletin-paysage td { font-size: 11.5px !important; padding: 5px 6px !important; }`}</style>
+.bulletin-paysage td { font-size: 11.5px !important; padding: 5px 6px !important; }
+/* Petits textes fixés en dur (8 à 10 px) : plus lisibles, pour tous les modèles de bulletin */
+.bulletin-print [style*="font-size: 8px"], .bulletin-print [style*="font-size: 8.5px"],
+.bulletin-print [style*="font-size: 9px"], .bulletin-print [style*="font-size: 9.5px"] { font-size: 10.5px !important; }
+.bulletin-print.bulletin-paysage [style*="font-size: 8px"], .bulletin-print.bulletin-paysage [style*="font-size: 8.5px"],
+.bulletin-print.bulletin-paysage [style*="font-size: 9px"], .bulletin-print.bulletin-paysage [style*="font-size: 9.5px"],
+.bulletin-print.bulletin-paysage [style*="font-size: 10px"] { font-size: 11.5px !important; }
+.bulletin-print.bulletin-paysage th[style*="font-size"], .bulletin-print.bulletin-paysage td[style*="font-size"] { font-size: 11.5px !important; }
+`}</style>
       <div className={`card bulletin-print${paysage ? ' bulletin-paysage' : ''}`} style={{ padding: '14px 18px', maxWidth: paysage ? 1240 : 920, minWidth: paysage ? 900 : 680, margin: '0 auto', fontSize: paysage ? 11 : 10, background: d.couleurFond, color: texteSur(d.couleurFond || '#ffffff') }}>
         {children}
       </div>
