@@ -1062,8 +1062,8 @@ export const SettingsPage: React.FC = () => {
   return (
     <div>
       <div className="page-header"><div className="page-title">{t('settings.title')}</div><div className="page-subtitle">{t('settings.subtitle')}</div></div>
-      <div style={{ display: 'grid', gridTemplateColumns: '240px 1fr', gap: 24 }}>
-        <div className="card" style={{ padding: 0, alignSelf: 'start' }}>
+      <div className="settings-layout">
+        <div className="card settings-nav" style={{ padding: 0, alignSelf: 'start' }}>
           {tabs.map(item => (
             <div key={item.id} onClick={() => setTab(item.id)}
               style={{ padding: '12px 20px', fontSize: 13, fontWeight: 600, cursor: 'pointer', background: tab === item.id ? 'var(--primary-pale)' : 'transparent', color: tab === item.id ? 'var(--primary-light)' : 'var(--text)', borderRadius: tab === item.id ? 'var(--radius-sm)' : 0, margin: 4 }}>

@@ -192,6 +192,9 @@ input, select, textarea {
 .form-control:focus { border-color: var(--primary-light); box-shadow: 0 0 0 3px rgba(37,99,168,0.1); }
 .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
 
+/* Page Paramètres : menu des sections à gauche (ordinateur) / onglets défilants en haut (téléphone) */
+.settings-layout { display: grid; grid-template-columns: 240px minmax(0, 1fr); gap: 24px; }
+
 /* Table */
 .table-wrap { overflow-x: auto; }
 table { width: 100%; border-collapse: collapse; }
@@ -443,6 +446,9 @@ tbody tr:last-child td { border-bottom: none; }
   /* Grilles */
   .grid-2, .grid-3 { grid-template-columns: 1fr; gap: 12px; }
   .form-row { grid-template-columns: 1fr; }
+  .settings-layout { grid-template-columns: minmax(0, 1fr); gap: 12px; }
+  .settings-nav { display: flex; overflow-x: auto; -webkit-overflow-scrolling: touch; align-self: stretch !important; }
+  .settings-nav > div { flex: 0 0 auto; white-space: nowrap; }
 
   /* Tables : scroll horizontal */
   .table-wrap { overflow-x: auto; -webkit-overflow-scrolling: touch; }
